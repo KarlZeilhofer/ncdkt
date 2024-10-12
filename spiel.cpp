@@ -45,12 +45,32 @@ void Spiel::willkommenBildschirm() {
 
     // Neues Fenster erstellen
     WINDOW* win = newwin(height - 2, width - 2, 1, 1);
+    box(win, 0, 0);
+
+    // Anzahl der Spieler abfragen
+    mvwprintw(win, 2, 2, "Willkommen bei DKT!");
+    mvwprintw(win, 4, 2, "Bitte geben Sie die Anzahl der Spieler ein (2-4): ");
+    wrefresh(win);
+
+    int anzahlSpieler;
+    echo();
+    mvwscanw(win, 5, 2, "%d", &anzahlSpieler);
+    noecho();
+
+    // Überprüfen der Spieleranzahl
+    while (anzahlSpieler < 2 || anzahlSpieler > 4) {
+        mvwprintw(win, 6, 2, "Ungueltige Anzahl. Bitte waehle zwischen 2 und 4 Spielern.");
+        wrefresh(win);
+        echo();
+        mvwscanw(win, 7, 2, "%d", &anzahlSpieler);
+        noecho();
+    }
 
     // Spielernamen und Farben eingeben
-    for (int i = 0; i < spieler.size(); i++) {
+    for (int i = 0; i < anzahlSpieler; i++) {
         werase(win);
         box(win, 0, 0);
-        mvwprintw(win, 2, 2, "Spieler %d von %d", i + 1, (int)spieler.size());
+        mvwprintw(win, 2, 2, "Spieler %d von %d", i + 1, anzahlSpieler);
         mvwprintw(win, 4, 2, "Name des Spielers:");
         wrefresh(win);
 

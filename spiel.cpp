@@ -16,13 +16,49 @@ Spiel::Spiel() : aktuellerSpieler(0), lastWuerfel1(1), lastWuerfel2(1), eingabeH
     verfuegbareFarben = {1, 2, 3, 4}; // 1=Rot, 2=Blau, 3=Grün, 4=Gelb
     srand(time(0)); // Zufallszahlengenerator initialisieren
 
-    // Spielfelder initialisieren
-    for (int i = 0; i < 40; i++) {
-        std::string name = "Feld " + std::to_string(i + 1);
-        int preis = ((i + 1) * 10) % 200 + 50; // Beispielpreise zwischen 50 und 250
-        spielfelder.push_back(Spielfeld(i + 1, name, preis));
-    }
+    // Beispielhafte Initialisierung der Spielfelder
+    spielfelder.push_back(Spielfeld(1, "AWS", 0, 0, {0, 0, 0, 0, 0, 0}));
+    spielfelder.push_back(Spielfeld(2, "Toni's Freilandeier", 120, 60, {10, 40,110, 300, 450, 650}));
+    spielfelder.push_back(Spielfeld(3, "Trenkwalder", 240,140, {22,100, 320, 680, 850,1000}));
+    spielfelder.push_back(Spielfeld(4, "Knorr", 300,200, {30,150,450, 850,1050,1200}));
+    spielfelder.push_back(Spielfeld(5, "Shark", 120, 60, {10, 40, 110, 300, 450, 650}));
+    spielfelder.push_back(Spielfeld(6, "SPIDAN GKN", 140, 80, {12, 50, 150, 450, 600, 730}));
+    spielfelder.push_back(Spielfeld(7, "BOMAG", 120, 60, {10, 40, 110, 300, 450, 650}));
+    spielfelder.push_back(Spielfeld(8, "CSR Austria",    0, 0, {0, 0, 0, 0, 0, 0}));
+    spielfelder.push_back(Spielfeld(9, "Jello", 180,100, {18, 70, 210, 500, 700, 850}));
+    spielfelder.push_back(Spielfeld(10, "inode", 160, 90, {16, 80, 200, 500, 700, 800}));
+    spielfelder.push_back(Spielfeld(11, "CATRO Schulung",  0, 0, {0, 0, 0, 0, 0, 0}));
+    spielfelder.push_back(Spielfeld(12, "Post.at", 350, 220,{40,170, 500,1000,1300,1600}));
+    spielfelder.push_back(Spielfeld(13, "CONTIPAK", 120, 60, {10, 40, 110, 300, 450, 650}));
+    spielfelder.push_back(Spielfeld(14, "Investkredit",  0, 0, {0, 0, 0, 0, 0, 0}));
+    spielfelder.push_back(Spielfeld(15, "Coca Cola", 300,200, {30,150, 450, 850,1050,1200}));
+    spielfelder.push_back(Spielfeld(16, "ATOMIC", 240,140, {22,100, 320, 680, 850,1000}));
+    spielfelder.push_back(Spielfeld(17, "SAP", 200,110, {20, 80, 230, 550, 710, 900}));
+    spielfelder.push_back(Spielfeld(18, "ORF", 160, 0, {40, 80, 160, 0,0,0}));
+    spielfelder.push_back(Spielfeld(19, "Wienerberger", 380,220, {50,200, 600,1300,1600,1950}));
+    spielfelder.push_back(Spielfeld(20, "UTA", 300,200, {30,150, 450, 850,1050,1200}));
+    spielfelder.push_back(Spielfeld(21, "SOS Kinderdorf",  0, 0, {0, 0, 0, 0, 0, 0}));
+    spielfelder.push_back(Spielfeld(22, "Manner", 220,160, {20,100, 300, 600, 750, 950}));
+    spielfelder.push_back(Spielfeld(23, "NEWS", 160, 0, {40, 80, 160, 0,0,0}));
+    spielfelder.push_back(Spielfeld(24, "Grander", 0, 0, {0, 0, 0, 0, 0, 0}));
+    spielfelder.push_back(Spielfeld(25, "VTG", 140, 80, {12, 50, 150, 450, 600, 730}));
+    spielfelder.push_back(Spielfeld(26, "LOOS", 160, 90, {16, 80, 200, 500, 700, 800}));
+    spielfelder.push_back(Spielfeld(27, "Raiffeisen", 220,160, {20,100, 300, 600, 750, 950}));
+    spielfelder.push_back(Spielfeld(28, "UNIQA",  0, 0, {0, 0, 0, 0, 0, 0}));
+    spielfelder.push_back(Spielfeld(29, "VOLVO", 260,160, {26,120, 350, 800,1100,1250}));
+    spielfelder.push_back(Spielfeld(30, "TetraPak", 160, 90, {16, 80, 200, 500, 700, 800}));
+    spielfelder.push_back(Spielfeld(31, "CATRO Schulung", 0, 0, {0, 0, 0, 0, 0, 0}));
+    spielfelder.push_back(Spielfeld(32, "JÖBSTL", 160, 90, {16, 80, 200, 500, 700, 800}));
+    spielfelder.push_back(Spielfeld(33, "Investkredit", 0, 0, {0, 0, 0, 0, 0, 0}));
+    spielfelder.push_back(Spielfeld(34, "Die Presse", 160, 0, {40, 80, 160, 0,0,0}));
+    spielfelder.push_back(Spielfeld(35, "RÖFIX", 180, 100,{18, 70,210,500  , 700, 850}));
+    spielfelder.push_back(Spielfeld(36, "UNIQA", 120, 50, {12, 36, 108, 180, 300, 450}));
+    spielfelder.push_back(Spielfeld(37, "T-Systems", 280,180, {28,140, 400, 800,1000,1150}));
+    spielfelder.push_back(Spielfeld(38, "Lieferbeton", 220,160, {20, 100,300, 600, 750, 950}));
+    spielfelder.push_back(Spielfeld(39, "Mazda", 320,210, {32,160, 480, 900,1100,1300}));
+    spielfelder.push_back(Spielfeld(40, "Welser Profile", 280,180, {28,140, 400, 800,1000,1150}));
 }
+
 
 void Spiel::setzeFarben() {
     start_color();
@@ -332,9 +368,36 @@ void Spiel::zeichneSpielfeld() {
         // Feldinformationen anzeigen
         std::string fieldInfo;
         if (!feld.eigentuemer.empty()) {
-            // Feld gehört jemandem, Mietpreis anzeigen
-            int miete = feld.preis / 10; // Beispielhafter Mietpreis
-            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | Miete: " + std::to_string(miete) + " EUR";
+            // Entwicklungsstufe bestimmen
+            std::string entwicklungsStufe;
+            switch (feld.haeuser) {
+                case 0:
+                    entwicklungsStufe = "GmbH";
+                    break;
+                case 1:
+                    entwicklungsStufe = "GmbH *";
+                    break;
+                case 2:
+                    entwicklungsStufe = "GmbH **";
+                    break;
+                case 3:
+                    entwicklungsStufe = "GmbH ***";
+                    break;
+                case 4:
+                    entwicklungsStufe = "GmbH ****";
+                    break;
+                case 5:
+                    entwicklungsStufe = "### AG ###";
+                    break;
+                default:
+                    entwicklungsStufe = "";
+                    break;
+            }
+
+            // Aktuelle Miete basierend auf Entwicklungsstufe
+            int aktuelleMiete = feld.miete[feld.haeuser];
+
+            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | " + entwicklungsStufe + " | Miete: " + std::to_string(aktuelleMiete) + " EUR";
             // Hintergrundfarbe des Eigentümers setzen
             int farbe = 0;
             for (const auto& sp : spieler) {
@@ -343,12 +406,13 @@ void Spiel::zeichneSpielfeld() {
                     break;
                 }
             }
+            int xPosition = 14;
             if (farbe != 0) {
                 attron(COLOR_PAIR(farbe));
-                mvprintw(row, 14, "%s", fieldInfo.c_str());
+                mvprintw(row, xPosition, "%s", fieldInfo.c_str());
                 attroff(COLOR_PAIR(farbe));
             } else {
-                mvprintw(row, 14, "%s", fieldInfo.c_str());
+                mvprintw(row, xPosition, "%s", fieldInfo.c_str());
             }
         } else {
             // Feld ist frei, Kaufpreis anzeigen
@@ -395,9 +459,36 @@ void Spiel::zeichneSpielfeld() {
         // Feldinformationen anzeigen
         std::string fieldInfo;
         if (!feld.eigentuemer.empty()) {
-            // Feld gehört jemandem, Mietpreis anzeigen
-            int miete = feld.preis / 10; // Beispielhafter Mietpreis
-            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | Miete: " + std::to_string(miete) + " EUR";
+            // Entwicklungsstufe bestimmen
+            std::string entwicklungsStufe;
+            switch (feld.haeuser) {
+                case 0:
+                    entwicklungsStufe = "GmbH";
+                    break;
+                case 1:
+                    entwicklungsStufe = "GmbH *";
+                    break;
+                case 2:
+                    entwicklungsStufe = "GmbH **";
+                    break;
+                case 3:
+                    entwicklungsStufe = "GmbH ***";
+                    break;
+                case 4:
+                    entwicklungsStufe = "GmbH ****";
+                    break;
+                case 5:
+                    entwicklungsStufe = "### AG ###";
+                    break;
+                default:
+                    entwicklungsStufe = "";
+                    break;
+            }
+
+            // Aktuelle Miete basierend auf Entwicklungsstufe
+            int aktuelleMiete = feld.miete[feld.haeuser];
+
+            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | " + entwicklungsStufe + " | Miete: " + std::to_string(aktuelleMiete) + " EUR";
             // Hintergrundfarbe des Eigentümers setzen
             int farbe = 0;
             for (const auto& sp : spieler) {
@@ -406,12 +497,13 @@ void Spiel::zeichneSpielfeld() {
                     break;
                 }
             }
+            int xPosition = width / 2 + 14;
             if (farbe != 0) {
                 attron(COLOR_PAIR(farbe));
-                mvprintw(row, width / 2 + 14, "%s", fieldInfo.c_str());
+                mvprintw(row, xPosition, "%s", fieldInfo.c_str());
                 attroff(COLOR_PAIR(farbe));
             } else {
-                mvprintw(row, width / 2 + 14, "%s", fieldInfo.c_str());
+                mvprintw(row, xPosition, "%s", fieldInfo.c_str());
             }
         } else {
             // Feld ist frei, Kaufpreis anzeigen
@@ -444,14 +536,13 @@ void Spiel::zeichneSpielfeld() {
     for (const auto& sp : spieler) {
         std::string info = sp.name + ": " + std::to_string(sp.geld) + " EUR  ";
         attron(COLOR_PAIR(sp.farbe));
-        mvprintw(statusRow, xPos, "%s", info.c_str());
+        mvprintw(statusRow + 1, xPos, "%s", info.c_str());
         attroff(COLOR_PAIR(sp.farbe));
         xPos += info.length();
     }
 
     // Eingabehinweise zentriert in der untersten Zeile anzeigen
-    std::string hint = eingabeHinweis; // Variable eingabeHinweis speichern
-    printCentered(stdscr, LINES - 1, COLS, hint.c_str());
+    printCentered(stdscr, LINES - 1, COLS, eingabeHinweis.c_str());
 
     refresh();
 }
@@ -636,6 +727,7 @@ void Spiel::feldAktion(Spieler& sp) {
             if (sp.geld >= feld.preis) {
                 sp.geld -= feld.preis;
                 feld.eigentuemer = sp.name;
+                feld.haeuser = 0; // Start mit GmbH
                 anweisungsText = "Gekauft: " + feld.name;
                 eingabeHinweis = "";
                 aktualisiereBild();
@@ -653,7 +745,7 @@ void Spiel::feldAktion(Spieler& sp) {
         }
     } else if (feld.eigentuemer != sp.name) {
         // Miete zahlen
-        int miete = feld.preis / 10; // Beispielhafte Miete
+        int miete = feld.miete[feld.haeuser]; // Miete basierend auf Entwicklungsstufe
         sp.geld -= miete;
 
         // Eigentümer finden und Miete gutschreiben
@@ -669,8 +761,48 @@ void Spiel::feldAktion(Spieler& sp) {
         aktualisiereBild();
         napms(2000);
     } else {
-        // Nichts passiert
-        anweisungsText = "";
-        eingabeHinweis = "";
+        // Option zum Investieren anbieten
+        if (feld.haeuser < 5 && feld.investitionsKosten > 0) { // Maximale Entwicklungsstufe ist 5
+            std::string bauArt = (feld.haeuser < 4) ? "eine Investition tätigen" : "in eine AG umwandeln";
+            int kosten = feld.investitionsKosten;
+
+            anweisungsText = sp.name + ", willst du " + bauArt + " auf \"" + feld.name + "\" für " + std::to_string(kosten) + " EUR?";
+            eingabeHinweis = " [J/N] ";
+
+            // Gesamtes Bild aktualisieren
+            aktualisiereBild();
+
+            int ch;
+            do {
+                ch = toupper(getch());
+            } while (ch != 'J' && ch != 'N');
+
+            if (ch == 'J') {
+                if (sp.geld >= kosten) {
+                    sp.geld -= kosten;
+                    feld.haeuser += 1; // Entwicklungsstufe erhöhen
+                    std::string stufe = (feld.haeuser == 5) ? "AG" : "GmbH";
+                    anweisungsText = "Du hast \"" + feld.name + "\" zu einer " + stufe + " ausgebaut.";
+                    eingabeHinweis = "";
+                    aktualisiereBild();
+                    napms(2000);
+                } else {
+                    anweisungsText = "Nicht genug Geld für die Investition.";
+                    eingabeHinweis = "";
+                    aktualisiereBild();
+                    napms(2000);
+                }
+            } else {
+                // Spieler lehnt ab
+                anweisungsText = "";
+                eingabeHinweis = "";
+            }
+        } else {
+            // Maximale Entwicklungsstufe erreicht oder keine Investition möglich
+            anweisungsText = "\"" + feld.name + "\" kann nicht weiter ausgebaut werden.";
+            eingabeHinweis = "";
+            aktualisiereBild();
+            napms(2000);
+        }
     }
 }

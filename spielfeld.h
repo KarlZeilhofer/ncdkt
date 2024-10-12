@@ -2,18 +2,15 @@
 #define SPIELFELD_H
 
 #include <string>
-#include <vector>
 
 class Spielfeld {
 public:
     int nummer;
     std::string name;
     std::string eigentuemer;
-    std::vector<int> spielerAufFeld;
+    int preis;
 
-    Spielfeld(int nummer, const std::string &name);
-    void fuegeSpielerHinzu(int spielerIndex);
-    void entferneSpieler(int spielerIndex);
+    Spielfeld(int nummer, const std::string& name, int preis);
 };
 
-#endif
+#endif // SPIELFELD_H

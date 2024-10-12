@@ -1,24 +1,27 @@
 #ifndef SPIEL_H
 #define SPIEL_H
 
-#include "spielfeld.h"
 #include "spieler.h"
+#include "spielfeld.h"
 #include <vector>
 #include <ncurses.h>
 
 class Spiel {
 private:
-    std::vector<Spielfeld> spielfelder;
     std::vector<Spieler> spieler;
     int aktuellerSpieler;
+    std::vector<Spielfeld> spielfelder;
+    std::vector<int> verfuegbareFarben; // Verfügbare Farben (1=Rot, 2=Blau, 3=Grün, 4=Gelb)
 
+    void setzeFarben();
+    int zeigeFarbauswahl(WINDOW* win, int starty);
     void zeichneSpielfeld();
-    void zeigeSpielerAufFeld(Spielfeld &feld, int zeile, int spalte);
     void wuerfelnUndZiehen();
+
 public:
     Spiel();
     void willkommenBildschirm();
-    void start();
+    void spielLoop();
 };
 
-#endif
+#endif // SPIEL_H

@@ -6,11 +6,12 @@
 class Spieler {
 public:
     std::string name;
+    int farbe;      // Spielerfarbe (1=Rot, 2=Blau, 3=Grün, 4=Gelb)
     int position;
     int geld;
 
-    Spieler(const std::string &name, int startPosition, int startGeld);
+    Spieler(const std::string& name, int farbe, int startPosition, int startGeld);
     void bewegeVorwaerts(int felder);
 };
 
-#endif
+#endif // SPIELER_H

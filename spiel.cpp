@@ -13,7 +13,7 @@ void printCentered(WINDOW* win, int starty, int width, const char* text) {
 }
 
 Spiel::Spiel() : aktuellerSpieler(0) {
-    verfuegbareFarben = {1, 2, 3, 4}; // 1=Rot, 2=Blau, 3=Grün, 4=Gelb
+    verfuegbareFarben = {1, 2, 3, 4}; // 1=Rot, 2=Blau, 3=Gruen, 4=Gelb
     srand(time(0)); // Zufallszahlengenerator initialisieren
 
     // Spielfelder initialisieren
@@ -45,36 +45,22 @@ void Spiel::willkommenBildschirm() {
 
     // Neues Fenster erstellen
     WINDOW* win = newwin(height - 2, width - 2, 1, 1);
-    box(win, 0, 0);
-
-    // Titel zentriert
-    printCentered(win, 2, width - 2, "Willkommen bei DKT!");
-    printCentered(win, 4, width - 2, "Bitte geben Sie Ihre Spielernamen ein und wählen Sie Ihre Farbe.");
-
-    // Anzahl der Spieler abfragen
-    mvwprintw(win, 6, 2, "Wie viele Spieler nehmen teil (2-4)? ");
-    wrefresh(win);
-
-    int anzahlSpieler;
-    wscanw(win, "%d", &anzahlSpieler);
-
-    // Überprüfen der Spieleranzahl
-    while (anzahlSpieler < 2 || anzahlSpieler > 4) {
-        mvwprintw(win, 8, 2, "Ungültige Anzahl. Bitte wähle zwischen 2 und 4 Spielern.");
-        wrefresh(win);
-        wscanw(win, "%d", &anzahlSpieler);
-    }
 
     // Spielernamen und Farben eingeben
-    for (int i = 0; i < anzahlSpieler; i++) {
-        char name[50];
-
-        mvwprintw(win, 10 + i * 4, 2, "Name des Spielers %d: ", i + 1);
+    for (int i = 0; i < spieler.size(); i++) {
+        werase(win);
+        box(win, 0, 0);
+        mvwprintw(win, 2, 2, "Spieler %d von %d", i + 1, (int)spieler.size());
+        mvwprintw(win, 4, 2, "Name des Spielers:");
         wrefresh(win);
-        wgetnstr(win, name, sizeof(name) - 1); // Spielernamen eingeben
+
+        char name[50];
+        echo(); // Echo aktivieren für Namenseingabe
+        mvwgetnstr(win, 5, 2, name, sizeof(name) - 1); // Spielernamen eingeben
+        noecho(); // Echo wieder deaktivieren
 
         // Farbauswahl mit Pfeiltasten
-        int farbe = zeigeFarbauswahl(win, 12 + i * 4);
+        int farbe = zeigeFarbauswahl(win, 7);
 
         // Spieler initialisieren
         spieler.push_back(Spieler(name, farbe, 0, 1500)); // Startposition 0, Startgeld 1500€
@@ -98,37 +84,39 @@ int Spiel::zeigeFarbauswahl(WINDOW* win, int starty) {
     keypad(win, TRUE); // Pfeiltasten im Fenster aktivieren
 
     while (choice == -1) {
+        werase(win);
+        box(win, 0, 0);
+        mvwprintw(win, starty - 2, 2, "Waehle eine Farbe mit den Pfeiltasten und druecke Enter:");
         for (size_t i = 0; i < verfuegbareFarben.size(); i++) {
             if ((int)i == highlight) {
-                wattron(win, A_REVERSE);
+                // Markiere die aktuelle Auswahl mit einem Pfeil
+                mvwprintw(win, starty + i, 2, "-->");
+            } else {
+                mvwprintw(win, starty + i, 2, "   ");
             }
 
             // Farben anzeigen
             switch (verfuegbareFarben[i]) {
                 case 1:
                     wattron(win, COLOR_PAIR(1));
-                    mvwprintw(win, starty + i, 2, "Rot");
+                    mvwprintw(win, starty + i, 6, "Rot");
                     wattroff(win, COLOR_PAIR(1));
                     break;
                 case 2:
                     wattron(win, COLOR_PAIR(2));
-                    mvwprintw(win, starty + i, 2, "Blau");
+                    mvwprintw(win, starty + i, 6, "Blau");
                     wattroff(win, COLOR_PAIR(2));
                     break;
                 case 3:
                     wattron(win, COLOR_PAIR(3));
-                    mvwprintw(win, starty + i, 2, "Gruen");
+                    mvwprintw(win, starty + i, 6, "Gruen");
                     wattroff(win, COLOR_PAIR(3));
                     break;
                 case 4:
                     wattron(win, COLOR_PAIR(4));
-                    mvwprintw(win, starty + i, 2, "Gelb");
+                    mvwprintw(win, starty + i, 6, "Gelb");
                     wattroff(win, COLOR_PAIR(4));
                     break;
-            }
-
-            if ((int)i == highlight) {
-                wattroff(win, A_REVERSE);
             }
         }
 

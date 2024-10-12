@@ -11,7 +11,7 @@ private:
     std::vector<Spieler> spieler;
     int aktuellerSpieler;
     std::vector<Spielfeld> spielfelder;
-    std::vector<int> verfuegbareFarben; // Verfügbare Farben (1=Rot, 2=Blau, 3=Grün, 4=Gelb)
+    std::vector<int> verfuegbareFarben; // Verfügbare Farben (1=Rot, 2=Blau, 3=Gruen, 4=Gelb)
 
     void setzeFarben();
     int zeigeFarbauswahl(WINDOW* win, int starty);

@@ -98,8 +98,16 @@ void Spiel::willkommenBildschirm() {
                     getnstr(name, sizeof(name) - 1);
                     noecho();
 
+                    // Überprüfen, ob der Name leer ist
+                    if (strlen(name) == 0) {
+                        printCentered(stdscr, 9, width, "Der Name darf nicht leer sein. Bitte erneut eingeben.");
+                        refresh();
+                        napms(1500); // Kurze Pause, um die Nachricht anzuzeigen
+                        continue; // Zurück zum Anfang der Schleife
+                    }
+
                     // Farbauswahl
-                    int farbe = zeigeFarbauswahl(stdscr, 9);
+                    int farbe = zeigeFarbauswahl(stdscr, 11);
 
                     // Spielername und Farbe speichern
                     spielerNamen.push_back(std::string(name));
@@ -121,11 +129,13 @@ void Spiel::willkommenBildschirm() {
         }
 
         // Auf Tastendruck prüfen (inklusive KEY_RESIZE)
+        nodelay(stdscr, TRUE); // Nicht blockierend
         int ch = getch();
         if (ch == KEY_RESIZE) {
             // Fenstergröße wurde geändert, Schleife erneut durchlaufen, um Bildschirm neu zu zeichnen
             continue;
         }
+        nodelay(stdscr, FALSE); // Zurück zu blockierend
 
         refresh();
     }
@@ -186,25 +196,35 @@ int Spiel::zeigeFarbauswahl(WINDOW* win, int starty) {
 
         wrefresh(win);
 
+        nodelay(win, TRUE); // Nicht blockierend
         c = wgetch(win);
-        switch (c) {
-            case KEY_UP:
-                highlight--;
-                if (highlight < 0) highlight = verfuegbareFarben.size() - 1;
-                break;
-            case KEY_DOWN:
-                highlight++;
-                if (highlight >= (int)verfuegbareFarben.size()) highlight = 0;
-                break;
-            case 10: // Enter-Taste
-                choice = verfuegbareFarben[highlight];
-                break;
-            case KEY_RESIZE:
-                // Fenstergröße geändert, neu zeichnen
-                continue;
-            default:
-                break;
+        if (c == ERR) {
+            // Keine Eingabe, aber wir können prüfen, ob das Fenster resized wurde
+            int newWidth = getmaxx(win);
+            if (newWidth != width) {
+                continue; // Fenstergröße hat sich geändert, neu zeichnen
+            }
+        } else if (c == KEY_RESIZE) {
+            // Fenstergröße geändert, neu zeichnen
+            continue;
+        } else {
+            switch (c) {
+                case KEY_UP:
+                    highlight--;
+                    if (highlight < 0) highlight = verfuegbareFarben.size() - 1;
+                    break;
+                case KEY_DOWN:
+                    highlight++;
+                    if (highlight >= (int)verfuegbareFarben.size()) highlight = 0;
+                    break;
+                case 10: // Enter-Taste
+                    choice = verfuegbareFarben[highlight];
+                    break;
+                default:
+                    break;
+            }
         }
+        nodelay(win, FALSE); // Zurück zu blockierend
     }
 
     return choice;

@@ -288,18 +288,21 @@ void Spiel::zeichneSpielfeld() {
         }
 
         // Spielernamen formatieren
-        char spielerNamen[13] = "            "; // 12 Leerzeichen + Nullterminator
         if (!spielerAufFeld.empty()) {
             int nameLength = 12 / spielerAufFeld.size();
             if (nameLength < 3) nameLength = 3; // Mindestens 3 Zeichen pro Spieler
 
+            int totalLength = nameLength * spielerAufFeld.size();
+            if (totalLength > 12) totalLength = 12; // Maximal 12 Zeichen
+
+            int startX = 1; // Startposition für Spielernamen
             for (size_t j = 0; j < spielerAufFeld.size(); j++) {
                 Spieler* sp = spielerAufFeld[j];
                 // Namen kürzen
                 std::string name = sp->name.substr(0, nameLength);
                 // Hintergrundfarbe setzen
                 attron(COLOR_PAIR(sp->farbe));
-                mvprintw(row, 1 + j * nameLength, "%-*s", nameLength, name.c_str());
+                mvprintw(row, startX + j * nameLength, "%-*s", nameLength, name.c_str());
                 attroff(COLOR_PAIR(sp->farbe));
             }
         } else {
@@ -307,7 +310,27 @@ void Spiel::zeichneSpielfeld() {
         }
 
         // Feldinformationen anzeigen
-        mvprintw(row, 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+        if (!feld.eigentuemer.empty()) {
+            // Feld gehört jemandem, Spielerfarbe ermitteln
+            int farbe = 0;
+            for (const auto& sp : spieler) {
+                if (sp.name == feld.eigentuemer) {
+                    farbe = sp.farbe;
+                    break;
+                }
+            }
+            if (farbe != 0) {
+                attron(COLOR_PAIR(farbe));
+                mvprintw(row, 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+                attroff(COLOR_PAIR(farbe));
+            } else {
+                // Falls die Farbe nicht gefunden wird
+                mvprintw(row, 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+            }
+        } else {
+            // Feld gehört niemandem
+            mvprintw(row, 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+        }
     }
 
     // Zweite Spalte (Felder 21-40)
@@ -324,18 +347,21 @@ void Spiel::zeichneSpielfeld() {
         }
 
         // Spielernamen formatieren
-        char spielerNamen[13] = "            "; // 12 Leerzeichen + Nullterminator
         if (!spielerAufFeld.empty()) {
             int nameLength = 12 / spielerAufFeld.size();
             if (nameLength < 3) nameLength = 3; // Mindestens 3 Zeichen pro Spieler
 
+            int totalLength = nameLength * spielerAufFeld.size();
+            if (totalLength > 12) totalLength = 12; // Maximal 12 Zeichen
+
+            int startX = width / 2 + 1; // Startposition für Spielernamen
             for (size_t j = 0; j < spielerAufFeld.size(); j++) {
                 Spieler* sp = spielerAufFeld[j];
                 // Namen kürzen
                 std::string name = sp->name.substr(0, nameLength);
                 // Hintergrundfarbe setzen
                 attron(COLOR_PAIR(sp->farbe));
-                mvprintw(row, width / 2 + 1 + j * nameLength, "%-*s", nameLength, name.c_str());
+                mvprintw(row, startX + j * nameLength, "%-*s", nameLength, name.c_str());
                 attroff(COLOR_PAIR(sp->farbe));
             }
         } else {
@@ -343,10 +369,30 @@ void Spiel::zeichneSpielfeld() {
         }
 
         // Feldinformationen anzeigen
-        mvprintw(row, width / 2 + 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+        if (!feld.eigentuemer.empty()) {
+            // Feld gehört jemandem, Spielerfarbe ermitteln
+            int farbe = 0;
+            for (const auto& sp : spieler) {
+                if (sp.name == feld.eigentuemer) {
+                    farbe = sp.farbe;
+                    break;
+                }
+            }
+            if (farbe != 0) {
+                attron(COLOR_PAIR(farbe));
+                mvprintw(row, width / 2 + 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+                attroff(COLOR_PAIR(farbe));
+            } else {
+                // Falls die Farbe nicht gefunden wird
+                mvprintw(row, width / 2 + 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+            }
+        } else {
+            // Feld gehört niemandem
+            mvprintw(row, width / 2 + 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+        }
     }
 
-    // Statuszeile mit Geldständen der Spieler
+    // Statuszeile mit Geldständen der Spieler (unverändert)
     int statusRow = LINES - 11; // Start der Statuszeile
     mvhline(statusRow - 1, 0, ACS_HLINE, COLS); // Trennlinie
 

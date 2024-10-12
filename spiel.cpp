@@ -266,35 +266,80 @@ void Spiel::zeichneSpielfeld() {
     int width = COLS;
     printCentered(stdscr, 0, width, "DKT");
 
-    mvprintw(1, 1, "Nr.  | Name                       | Preis ");
+    // Spaltenüberschriften
+    mvprintw(1, 1, "Spieler       | Nr. | Name                       | Preis ");
+    mvprintw(1, width / 2, "Spieler       | Nr. | Name                       | Preis ");
 
-    for (size_t i = 0; i < spielfelder.size(); i++) {
+    // Erste Spalte (Felder 1-20)
+    for (int i = 0; i < 20; i++) {
         Spielfeld& feld = spielfelder[i];
-        char line[100];
-        snprintf(line, sizeof(line), "%2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+        int row = 2 + i;
 
-        // Wenn das Feld einem Spieler gehört, Hintergrundfarbe setzen
-        if (!feld.eigentuemer.empty()) {
-            for (const auto& sp : spieler) {
-                if (sp.name == feld.eigentuemer) {
-                    attron(COLOR_PAIR(sp.farbe));
-                    mvprintw(2 + i, 1, "%s", line);
-                    attroff(COLOR_PAIR(sp.farbe));
-                    break;
-                }
+        // Spieler auf dem Feld sammeln
+        std::vector<Spieler*> spielerAufFeld;
+        for (auto& sp : spieler) {
+            if (sp.position == i) {
+                spielerAufFeld.push_back(&sp);
+            }
+        }
+
+        // Spielernamen formatieren
+        char spielerNamen[13] = "            "; // 12 Leerzeichen + Nullterminator
+        if (!spielerAufFeld.empty()) {
+            int nameLength = 12 / spielerAufFeld.size();
+            if (nameLength < 3) nameLength = 3; // Mindestens 3 Zeichen pro Spieler
+
+            for (size_t j = 0; j < spielerAufFeld.size(); j++) {
+                Spieler* sp = spielerAufFeld[j];
+                // Namen kürzen
+                std::string name = sp->name.substr(0, nameLength);
+                // Hintergrundfarbe setzen
+                attron(COLOR_PAIR(sp->farbe));
+                mvprintw(row, 1 + j * nameLength, "%-*s", nameLength, name.c_str());
+                attroff(COLOR_PAIR(sp->farbe));
             }
         } else {
-            mvprintw(2 + i, 1, "%s", line);
+            mvprintw(row, 1, "            "); // Leeres Feld für Spieler
         }
 
-        // Spieler auf dem Feld anzeigen
-        for (const auto& sp : spieler) {
-            if (sp.position == (int)i) {
-                attron(COLOR_PAIR(sp.farbe));
-                mvprintw(2 + i, COLS - 15, "[%s]", sp.name.c_str());
-                attroff(COLOR_PAIR(sp.farbe));
+        // Feldinformationen anzeigen
+        mvprintw(row, 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+    }
+
+    // Zweite Spalte (Felder 21-40)
+    for (int i = 20; i < 40; i++) {
+        Spielfeld& feld = spielfelder[i];
+        int row = 2 + (i - 20);
+
+        // Spieler auf dem Feld sammeln
+        std::vector<Spieler*> spielerAufFeld;
+        for (auto& sp : spieler) {
+            if (sp.position == i) {
+                spielerAufFeld.push_back(&sp);
             }
         }
+
+        // Spielernamen formatieren
+        char spielerNamen[13] = "            "; // 12 Leerzeichen + Nullterminator
+        if (!spielerAufFeld.empty()) {
+            int nameLength = 12 / spielerAufFeld.size();
+            if (nameLength < 3) nameLength = 3; // Mindestens 3 Zeichen pro Spieler
+
+            for (size_t j = 0; j < spielerAufFeld.size(); j++) {
+                Spieler* sp = spielerAufFeld[j];
+                // Namen kürzen
+                std::string name = sp->name.substr(0, nameLength);
+                // Hintergrundfarbe setzen
+                attron(COLOR_PAIR(sp->farbe));
+                mvprintw(row, width / 2 + 1 + j * nameLength, "%-*s", nameLength, name.c_str());
+                attroff(COLOR_PAIR(sp->farbe));
+            }
+        } else {
+            mvprintw(row, width / 2 + 1, "            "); // Leeres Feld für Spieler
+        }
+
+        // Feldinformationen anzeigen
+        mvprintw(row, width / 2 + 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
     }
 
     refresh();

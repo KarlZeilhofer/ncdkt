@@ -12,7 +12,7 @@ void printCentered(WINDOW* win, int starty, int width, const char* text) {
     mvwprintw(win, starty, x, "%s", text);
 }
 
-Spiel::Spiel() : aktuellerSpieler(0), lastWuerfel1(1), lastWuerfel2(1) {
+Spiel::Spiel() : aktuellerSpieler(0), lastWuerfel1(1), lastWuerfel2(1), eingabeHinweis(""), anweisungsText("") {
     verfuegbareFarben = {1, 2, 3, 4}; // 1=Rot, 2=Blau, 3=Grün, 4=Gelb
     srand(time(0)); // Zufallszahlengenerator initialisieren
 
@@ -239,13 +239,10 @@ void Spiel::spielLoop() {
     setzeFarben();
     keypad(stdscr, TRUE);
 
-    // Initiale Würfel anzeigen
-    zeichneWuerfel(); // Verschiebe die Würfelanzeige nach unten
+    // Initiale Anzeige
+    aktualisiereBild();
 
     while (true) {
-        // Spielfeld zeichnen
-        zeichneSpielfeld();
-
         // Aktueller Spieler würfelt und zieht
         wuerfelnUndZiehen();
 
@@ -254,6 +251,29 @@ void Spiel::spielLoop() {
     }
 
     endwin();
+}
+
+void Spiel::aktualisiereBild() {
+    // Gesamten Bildschirm löschen
+    clear();
+
+    // Spielfeld zeichnen
+    zeichneSpielfeld();
+
+    // Anweisungsbereich zeichnen
+    zeichneAnweisungsbereich();
+
+    // Würfel zeichnen
+    zeichneWuerfel();
+
+    // Statuszeilen zeichnen
+    zeichneStatuszeilen();
+
+    // Eingabehinweise anzeigen
+    zeichneEingabeHinweise();
+
+    // Bildschirm aktualisieren
+    refresh();
 }
 
 void Spiel::zeichneSpielfeld() {
@@ -433,133 +453,37 @@ void Spiel::zeichneSpielfeld() {
     std::string hint = eingabeHinweis; // Variable eingabeHinweis speichern
     printCentered(stdscr, LINES - 1, COLS, hint.c_str());
 
-    // Würfel anzeigen
-    zeichneWuerfel();
-
     refresh();
 }
 
-void Spiel::wuerfelnUndZiehen() {
-    Spieler& aktSpieler = spieler[aktuellerSpieler];
-    int interactionStartRow = LINES - 12; // Startzeile für Interaktion
+void Spiel::zeichneAnweisungsbereich() {
+    int interactionStartRow = LINES - 12; // Startzeile für Anweisungsbereich
     int width = COLS;
 
-    bool nochmalWuerfeln = true;
-
-    while (nochmalWuerfeln) {
-        clearInteractionArea();
-
-        // Anzeige, welcher Spieler an der Reihe ist
-        std::string msg = aktSpieler.name + " ist dran.";
-        printCentered(stdscr, interactionStartRow, width * 2 / 3, msg.c_str());
-
-        // Eingabehinweis aktualisieren
-        eingabeHinweis = " [Enter/Space] zum Würfeln ";
-        zeichneWuerfel();
-        refresh();
-
-        // Warten auf Eingabe
-        int ch;
-        do {
-            ch = getch();
-        } while (ch != '\n' && ch != ' ');
-
-        // Würfelanimation
-        int wuerfel1, wuerfel2;
-        animateDice(LINES - 14, wuerfel1, wuerfel2);
-
-        // Letzte Würfelwerte speichern
-        lastWuerfel1 = wuerfel1;
-        lastWuerfel2 = wuerfel2;
-
-        int schritte = wuerfel1 + wuerfel2;
-
-        // Bewegung der Spielfigur mit Animation
-        animateMovement(aktSpieler, schritte);
-
-        // Spielfeld neu zeichnen
-        zeichneSpielfeld();
-
-        // Feldaktion durchführen
-        feldAktion(aktSpieler);
-
-        // Spielfeld erneut zeichnen, um Änderungen zu reflektieren
-        zeichneSpielfeld();
-
-        // Prüfen auf Pasch
-        if (wuerfel1 == wuerfel2) {
-            clearInteractionArea();
-            printCentered(stdscr, interactionStartRow, width * 2 / 3, "Du darfst nochmal würfeln.");
-            zeichneWuerfel();
-            refresh();
-            napms(2000);
-            // Spieler darf nochmal würfeln
-            nochmalWuerfeln = true;
-        } else {
-            nochmalWuerfeln = false;
-        }
-    }
-}
-
-void Spiel::clearInteractionArea() {
-    // Nur den Inhalt des Interaktionsbereichs löschen, Rahmen behalten
-    int interactionStartRow = LINES - 13;
-    for (int i = interactionStartRow; i < LINES - 1; ++i) {
+    // Anweisungsbereich löschen
+    int instructionAreaWidth = width * 2 / 3;
+    for (int i = interactionStartRow; i < LINES - 2; ++i) {
         move(i, 1);
         clrtoeol();
     }
-}
 
-void Spiel::animateDice(int startRow, int& w1, int& w2) {
-    int delays[] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 150, 200, 250, 300};
-    int width = COLS;
-
-    const char* diceFaces[6][5] = {
-        {"+-----+", "|     |", "|  O  |", "|     |", "+-----+"},
-        {"+-----+", "| O   |", "|     |", "|   O |", "+-----+"},
-        {"+-----+", "| O   |", "|  O  |", "|   O |", "+-----+"},
-        {"+-----+", "| O O |", "|     |", "| O O |", "+-----+"},
-        {"+-----+", "| O O |", "|  O  |", "| O O |", "+-----+"},
-        {"+-----+", "| O O |", "| O O |", "| O O |", "+-----+"}
-    };
-
-    for (int i = 0; i < sizeof(delays)/sizeof(int); ++i) {
-        w1 = rand() % 6;
-        w2 = rand() % 6;
-
-        // Würfel anzeigen im rechten Drittel
-        int dice1_col = width * 2 / 3 + 5;
-        int dice2_col = width * 2 / 3 + 15;
-
-        for (int j = 0; j < 5; ++j) {
-            mvprintw(startRow + j + 2, dice1_col, "%s", diceFaces[w1][j]);
-            mvprintw(startRow + j + 2, dice2_col, "%s", diceFaces[w2][j]);
-        }
-
-        refresh();
-        napms(delays[i]);
-    }
-
-    // Endgültige Würfelwerte
-    w1 += 1;
-    w2 += 1;
-}
-
-void Spiel::animateMovement(Spieler& sp, int schritte) {
-    for (int i = 0; i < schritte; ++i) {
-        sp.position = (sp.position + 1) % 40;
-        // Spielfeld neu zeichnen
-        zeichneSpielfeld();
-        // Kurze Pause für die Animation
-        napms(250);
-    }
+    // Anweisungstext anzeigen
+    printCentered(stdscr, interactionStartRow, instructionAreaWidth, anweisungsText.c_str());
 }
 
 void Spiel::zeichneWuerfel() {
-    int startRow = LINES-14;
+    int startRow = LINES - 14;
     int width = COLS;
-    int dice1_col = width * 2 / 3 + 5;
-    int dice2_col = width * 2 / 3 + 15;
+    int diceAreaStartCol = width * 2 / 3 + 1;
+
+    // Würfelbereich löschen
+    for (int i = startRow; i < LINES - 2; ++i) {
+        move(i, diceAreaStartCol);
+        clrtoeol();
+    }
+
+    int dice1_col = diceAreaStartCol + 5;
+    int dice2_col = diceAreaStartCol + 15;
 
     const char* diceFaces[6][5] = {
         {"+-----+", "|     |", "|  O  |", "|     |", "+-----+"},
@@ -580,25 +504,128 @@ void Spiel::zeichneWuerfel() {
         mvprintw(startRow + j + 2, dice1_col, "%s", diceFaces[w1][j]);
         mvprintw(startRow + j + 2, dice2_col, "%s", diceFaces[w2][j]);
     }
-    refresh();
+}
+
+void Spiel::zeichneStatuszeilen() {
+    int statusRow = LINES - 14;
+    int width = COLS;
+
+    // Horizontale Linie zeichnen
+    mvhline(statusRow, 0, ACS_HLINE, width);
+
+    // Spielerzustände anzeigen
+    int xPos = (width - (spieler.size() * 20)) / 2; // Startposition berechnen
+    for (const auto& sp : spieler) {
+        std::string info = sp.name + ": " + std::to_string(sp.geld) + " EUR  ";
+        attron(COLOR_PAIR(sp.farbe));
+        mvprintw(statusRow + 1, xPos, "%s", info.c_str());
+        attroff(COLOR_PAIR(sp.farbe));
+        xPos += info.length();
+    }
+}
+
+void Spiel::zeichneEingabeHinweise() {
+    // Eingabehinweise zentriert unten anzeigen
+    printCentered(stdscr, LINES - 1, COLS, eingabeHinweis.c_str());
+}
+
+void Spiel::wuerfelnUndZiehen() {
+    Spieler& aktSpieler = spieler[aktuellerSpieler];
+
+    bool nochmalWuerfeln = true;
+
+    while (nochmalWuerfeln) {
+        // Anweisungstext aktualisieren
+        anweisungsText = aktSpieler.name + " ist dran.";
+        // Eingabehinweis aktualisieren
+        eingabeHinweis = " [Enter/Space] zum Würfeln ";
+
+        // Gesamtes Bild aktualisieren
+        aktualisiereBild();
+
+        // Warten auf Eingabe
+        int ch;
+        do {
+            ch = getch();
+        } while (ch != '\n' && ch != ' ');
+
+        // Würfelanimation
+        int wuerfel1, wuerfel2;
+        animateDice(wuerfel1, wuerfel2);
+
+        // Letzte Würfelwerte speichern
+        lastWuerfel1 = wuerfel1;
+        lastWuerfel2 = wuerfel2;
+
+        int schritte = wuerfel1 + wuerfel2;
+
+        // Bewegung der Spielfigur mit Animation
+        animateMovement(aktSpieler, schritte);
+
+        // Gesamtes Bild aktualisieren
+        aktualisiereBild();
+
+        // Feldaktion durchführen
+        feldAktion(aktSpieler);
+
+        // Gesamtes Bild erneut aktualisieren
+        aktualisiereBild();
+
+        // Prüfen auf Pasch
+        if (wuerfel1 == wuerfel2) {
+            anweisungsText = "Du darfst nochmal würfeln.";
+            eingabeHinweis = "";
+            aktualisiereBild();
+            napms(2000);
+            nochmalWuerfeln = true;
+        } else {
+            nochmalWuerfeln = false;
+        }
+    }
+}
+
+void Spiel::animateDice(int& w1, int& w2) {
+    int delays[] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 150, 200, 250, 300};
+
+    for (int i = 0; i < sizeof(delays) / sizeof(int); ++i) {
+        w1 = rand() % 6;
+        w2 = rand() % 6;
+
+        // Temporäre Würfelwerte speichern
+        lastWuerfel1 = w1 + 1;
+        lastWuerfel2 = w2 + 1;
+
+        // Bild aktualisieren, um die Würfel anzuzeigen
+        aktualisiereBild();
+
+        napms(delays[i]);
+    }
+
+    // Endgültige Würfelwerte
+    w1 += 1;
+    w2 += 1;
+}
+
+void Spiel::animateMovement(Spieler& sp, int schritte) {
+    for (int i = 0; i < schritte; ++i) {
+        sp.position = (sp.position + 1) % 40;
+        // Gesamtes Bild aktualisieren
+        aktualisiereBild();
+        // Kurze Pause für die Animation
+        napms(250);
+    }
 }
 
 void Spiel::feldAktion(Spieler& sp) {
     Spielfeld& feld = spielfelder[sp.position];
-    int interactionStartRow = LINES - 12;
-    int width = COLS;
-
-    clearInteractionArea();
 
     if (feld.eigentuemer.empty()) {
         // Kaufoption anbieten
-        std::string frage = sp.name + ", willst du \"" + feld.name + "\" für " + std::to_string(feld.preis) + " EUR kaufen?";
-        printCentered(stdscr, interactionStartRow, width * 2 / 3, frage.c_str());
-        // Eingabehinweis aktualisieren
+        anweisungsText = sp.name + ", willst du \"" + feld.name + "\" für " + std::to_string(feld.preis) + " EUR kaufen?";
         eingabeHinweis = " [J/N] ";
 
-        zeichneWuerfel();
-        refresh();
+        // Gesamtes Bild aktualisieren
+        aktualisiereBild();
 
         int ch;
         do {
@@ -609,23 +636,20 @@ void Spiel::feldAktion(Spieler& sp) {
             if (sp.geld >= feld.preis) {
                 sp.geld -= feld.preis;
                 feld.eigentuemer = sp.name;
-                clearInteractionArea();
-                std::string msg = "Gekauft: " + feld.name;
-                printCentered(stdscr, interactionStartRow, width * 2 / 3, msg.c_str());
-                zeichneSpielfeld();
-                zeichneWuerfel();
-                refresh();
+                anweisungsText = "Gekauft: " + feld.name;
+                eingabeHinweis = "";
+                aktualisiereBild();
                 napms(2000);
             } else {
-                clearInteractionArea();
-                std::string msg = "Nicht genug Geld.";
-                printCentered(stdscr, interactionStartRow, width * 2 / 3, msg.c_str());
-                zeichneWuerfel();
-                refresh();
+                anweisungsText = "Nicht genug Geld.";
+                eingabeHinweis = "";
+                aktualisiereBild();
                 napms(2000);
             }
         } else {
             // Spieler lehnt ab
+            anweisungsText = "";
+            eingabeHinweis = "";
         }
     } else if (feld.eigentuemer != sp.name) {
         // Miete zahlen
@@ -640,12 +664,13 @@ void Spiel::feldAktion(Spieler& sp) {
             }
         }
 
-//        clearInteractionArea();
-        std::string msg = "Du zahlst " + std::to_string(miete) + " EUR Miete an " + feld.eigentuemer;
-        printCentered(stdscr, interactionStartRow, width * 2 / 3, msg.c_str());
-        zeichneWuerfel();
-        refresh();
+        anweisungsText = "Du zahlst " + std::to_string(miete) + " EUR Miete an " + feld.eigentuemer;
+        eingabeHinweis = "";
+        aktualisiereBild();
         napms(2000);
+    } else {
+        // Nichts passiert
+        anweisungsText = "";
+        eingabeHinweis = "";
     }
-    // Andernfalls passiert nichts
 }

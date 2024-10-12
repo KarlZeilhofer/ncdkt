@@ -12,12 +12,15 @@ private:
     int aktuellerSpieler;
     std::vector<Spielfeld> spielfelder;
     std::vector<int> verfuegbareFarben; // Verfügbare Farben (1=Rot, 2=Blau, 3=Gruen, 4=Gelb)
+    std::string eingabeHinweis;
 
     void setzeFarben();
     int zeigeFarbauswahl(WINDOW* win, int starty);
     void zeichneSpielfeld();
     void wuerfelnUndZiehen();
 
+    int lastWuerfel1;
+    int lastWuerfel2;
 public:
     Spiel();
     void willkommenBildschirm();
@@ -26,6 +29,7 @@ public:
     void animateMovement(Spieler &sp, int schritte);
     void animateDice(int startRow, int &w1, int &w2);
     void clearInteractionArea();
+    void zeichneWuerfel();
 };
 
 #endif // SPIEL_H

@@ -12,8 +12,8 @@ void printCentered(WINDOW* win, int starty, int width, const char* text) {
     mvwprintw(win, starty, x, "%s", text);
 }
 
-Spiel::Spiel() : aktuellerSpieler(0) {
-    verfuegbareFarben = {1, 2, 3, 4}; // 1=Rot, 2=Blau, 3=Gruen, 4=Gelb
+Spiel::Spiel() : aktuellerSpieler(0), lastWuerfel1(1), lastWuerfel2(1) {
+    verfuegbareFarben = {1, 2, 3, 4}; // 1=Rot, 2=Blau, 3=Grün, 4=Gelb
     srand(time(0)); // Zufallszahlengenerator initialisieren
 
     // Spielfelder initialisieren
@@ -26,6 +26,7 @@ Spiel::Spiel() : aktuellerSpieler(0) {
 
 void Spiel::setzeFarben() {
     start_color();
+    use_default_colors(); // Ermöglicht Transparenz
     init_pair(1, COLOR_WHITE, COLOR_RED);    // Rot
     init_pair(2, COLOR_WHITE, COLOR_BLUE);   // Blau
     init_pair(3, COLOR_WHITE, COLOR_GREEN);  // Grün
@@ -71,9 +72,9 @@ void Spiel::willkommenBildschirm() {
             if (anzahlSpieler >= 2 && anzahlSpieler <= 4) {
                 spielerAnzahlEingegeben = true;
             } else {
-                printCentered(stdscr, 8, width, "Ungueltige Anzahl. Bitte erneut eingeben.");
-                refresh();
-                napms(1500); // Kurze Pause, um die Nachricht anzuzeigen
+//                printCentered(stdscr, 8, width, "Ungueltige Anzahl. Bitte erneut eingeben.");
+//                refresh();
+//                napms(1500); // Kurze Pause, um die Nachricht anzuzeigen
             }
         } else {
             for (int i = 0; i < anzahlSpieler; i++) {
@@ -100,10 +101,10 @@ void Spiel::willkommenBildschirm() {
 
                     // Überprüfen, ob der Name leer ist
                     if (strlen(name) == 0) {
-                        printCentered(stdscr, 9, width, "Der Name darf nicht leer sein. Bitte erneut eingeben.");
-                        refresh();
-                        napms(1500); // Kurze Pause, um die Nachricht anzuzeigen
-                        continue; // Zurück zum Anfang der Schleife
+//                        printCentered(stdscr, 9, width, "Der Name darf nicht leer sein. Bitte erneut eingeben.");
+//                        refresh();
+//                        napms(1500); // Kurze Pause, um die Nachricht anzuzeigen
+                          continue; // Zurück zum Anfang der Schleife
                     }
 
                     // Farbauswahl
@@ -238,16 +239,15 @@ void Spiel::spielLoop() {
     setzeFarben();
     keypad(stdscr, TRUE);
 
+    // Initiale Würfel anzeigen
+    zeichneWuerfel(); // Verschiebe die Würfelanzeige nach unten
+
     while (true) {
         // Spielfeld zeichnen
         zeichneSpielfeld();
 
         // Aktueller Spieler würfelt und zieht
         wuerfelnUndZiehen();
-
-        // Warten auf Tastendruck
-        mvprintw(LINES - 1, 0, "Druecken Sie eine Taste, um fortzufahren...");
-        getch();
 
         // Nächster Spieler
         aktuellerSpieler = (aktuellerSpieler + 1) % spieler.size();
@@ -258,7 +258,7 @@ void Spiel::spielLoop() {
 
 void Spiel::zeichneSpielfeld() {
     // Lösche nur den Bereich des Spielfelds (oberhalb des Interaktionsbereichs)
-    for (int i = 0; i < LINES - 11; ++i) {
+    for (int i = 0; i < LINES - 14; ++i) {
         move(i, 0);
         clrtoeol();
     }
@@ -270,9 +270,9 @@ void Spiel::zeichneSpielfeld() {
     int width = COLS;
     printCentered(stdscr, 0, width, "DKT");
 
-    // Spaltenüberschriften
-    mvprintw(1, 1, "Spieler       | Nr. | Name                       | Preis ");
-    mvprintw(1, width / 2, "Spieler       | Nr. | Name                       | Preis ");
+    // Leerzeile statt Tabellenkopf
+    mvprintw(1, 1, " ");
+    mvprintw(1, width / 2, " ");
 
     // Erste Spalte (Felder 1-20)
     for (int i = 0; i < 20; i++) {
@@ -310,8 +310,12 @@ void Spiel::zeichneSpielfeld() {
         }
 
         // Feldinformationen anzeigen
+        std::string fieldInfo;
         if (!feld.eigentuemer.empty()) {
-            // Feld gehört jemandem, Spielerfarbe ermitteln
+            // Feld gehört jemandem, Mietpreis anzeigen
+            int miete = feld.preis / 10; // Beispielhafter Mietpreis
+            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | Miete: " + std::to_string(miete) + " EUR";
+            // Hintergrundfarbe des Eigentümers setzen
             int farbe = 0;
             for (const auto& sp : spieler) {
                 if (sp.name == feld.eigentuemer) {
@@ -321,15 +325,15 @@ void Spiel::zeichneSpielfeld() {
             }
             if (farbe != 0) {
                 attron(COLOR_PAIR(farbe));
-                mvprintw(row, 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+                mvprintw(row, 14, "%s", fieldInfo.c_str());
                 attroff(COLOR_PAIR(farbe));
             } else {
-                // Falls die Farbe nicht gefunden wird
-                mvprintw(row, 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+                mvprintw(row, 14, "%s", fieldInfo.c_str());
             }
         } else {
-            // Feld gehört niemandem
-            mvprintw(row, 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+            // Feld ist frei, Kaufpreis anzeigen
+            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | Kauf: " + std::to_string(feld.preis) + " EUR";
+            mvprintw(row, 14, "%s", fieldInfo.c_str());
         }
     }
 
@@ -369,8 +373,12 @@ void Spiel::zeichneSpielfeld() {
         }
 
         // Feldinformationen anzeigen
+        std::string fieldInfo;
         if (!feld.eigentuemer.empty()) {
-            // Feld gehört jemandem, Spielerfarbe ermitteln
+            // Feld gehört jemandem, Mietpreis anzeigen
+            int miete = feld.preis / 10; // Beispielhafter Mietpreis
+            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | Miete: " + std::to_string(miete) + " EUR";
+            // Hintergrundfarbe des Eigentümers setzen
             int farbe = 0;
             for (const auto& sp : spieler) {
                 if (sp.name == feld.eigentuemer) {
@@ -380,37 +388,60 @@ void Spiel::zeichneSpielfeld() {
             }
             if (farbe != 0) {
                 attron(COLOR_PAIR(farbe));
-                mvprintw(row, width / 2 + 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+                mvprintw(row, width / 2 + 14, "%s", fieldInfo.c_str());
                 attroff(COLOR_PAIR(farbe));
             } else {
-                // Falls die Farbe nicht gefunden wird
-                mvprintw(row, width / 2 + 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+                mvprintw(row, width / 2 + 14, "%s", fieldInfo.c_str());
             }
         } else {
-            // Feld gehört niemandem
-            mvprintw(row, width / 2 + 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
+            // Feld ist frei, Kaufpreis anzeigen
+            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | Kauf: " + std::to_string(feld.preis) + " EUR";
+            mvprintw(row, width / 2 + 14, "%s", fieldInfo.c_str());
         }
     }
 
-    // Statuszeile mit Geldständen der Spieler (unverändert)
-    int statusRow = LINES - 11; // Start der Statuszeile
-    mvhline(statusRow - 1, 0, ACS_HLINE, COLS); // Trennlinie
-
-    int xPos = 1;
-    for (const auto& sp : spieler) {
-        std::string info = sp.name + ": " + std::to_string(sp.geld) + " EUR ";
-        attron(COLOR_PAIR(sp.farbe));
-        mvprintw(statusRow - 1, xPos, "%s", info.c_str());
-        attroff(COLOR_PAIR(sp.farbe));
-        xPos += info.length() + 2;
+    // Rahmen um den Interaktionsbereich zeichnen
+    int interactionStartRow = LINES - 14;
+    for (int i = interactionStartRow; i < LINES - 1; ++i) {
+        move(i, 0);
+        clrtoeol();
     }
+    // Rahmen zeichnen
+    mvhline(interactionStartRow, 0, ACS_HLINE, COLS);
+    mvhline(LINES - 1, 0, ACS_HLINE, COLS);
+    mvvline(interactionStartRow, 0, ACS_VLINE, LINES - interactionStartRow);
+    mvvline(interactionStartRow, COLS - 1, ACS_VLINE, LINES - interactionStartRow);
+    mvaddch(interactionStartRow, 0, ACS_ULCORNER);
+    mvaddch(interactionStartRow, COLS - 1, ACS_URCORNER);
+    mvaddch(LINES - 1, 0, ACS_LLCORNER);
+    mvaddch(LINES - 1, COLS - 1, ACS_LRCORNER);
+
+    // Spielerzustände zentriert und farblich hinterlegt anzeigen
+    int statusRow = LINES - 14;
+    mvhline(statusRow, 0, ACS_HLINE, COLS); // Trennlinie
+
+    int xPos = (COLS - (spieler.size() * 20)) / 2; // Berechne Startposition
+    for (const auto& sp : spieler) {
+        std::string info = sp.name + ": " + std::to_string(sp.geld) + " EUR  ";
+        attron(COLOR_PAIR(sp.farbe));
+        mvprintw(statusRow, xPos, "%s", info.c_str());
+        attroff(COLOR_PAIR(sp.farbe));
+        xPos += info.length();
+    }
+
+    // Eingabehinweise zentriert in der untersten Zeile anzeigen
+    std::string hint = eingabeHinweis; // Variable eingabeHinweis speichern
+    printCentered(stdscr, LINES - 1, COLS, hint.c_str());
+
+    // Würfel anzeigen
+    zeichneWuerfel();
 
     refresh();
 }
 
 void Spiel::wuerfelnUndZiehen() {
     Spieler& aktSpieler = spieler[aktuellerSpieler];
-    int interactionStartRow = LINES - 10; // Startzeile für Interaktion
+    int interactionStartRow = LINES - 12; // Startzeile für Interaktion
     int width = COLS;
 
     bool nochmalWuerfeln = true;
@@ -419,8 +450,12 @@ void Spiel::wuerfelnUndZiehen() {
         clearInteractionArea();
 
         // Anzeige, welcher Spieler an der Reihe ist
-        std::string msg = aktSpieler.name + " ist an der Reihe. Drücke Enter oder Leertaste zum Würfeln.";
-        printCentered(stdscr, interactionStartRow, width, msg.c_str());
+        std::string msg = aktSpieler.name + " ist dran.";
+        printCentered(stdscr, interactionStartRow, width * 2 / 3, msg.c_str());
+
+        // Eingabehinweis aktualisieren
+        eingabeHinweis = " [Enter/Space] zum Würfeln ";
+        zeichneWuerfel();
         refresh();
 
         // Warten auf Eingabe
@@ -431,7 +466,11 @@ void Spiel::wuerfelnUndZiehen() {
 
         // Würfelanimation
         int wuerfel1, wuerfel2;
-        animateDice(interactionStartRow + 1, wuerfel1, wuerfel2);
+        animateDice(LINES - 14, wuerfel1, wuerfel2);
+
+        // Letzte Würfelwerte speichern
+        lastWuerfel1 = wuerfel1;
+        lastWuerfel2 = wuerfel2;
 
         int schritte = wuerfel1 + wuerfel2;
 
@@ -450,9 +489,10 @@ void Spiel::wuerfelnUndZiehen() {
         // Prüfen auf Pasch
         if (wuerfel1 == wuerfel2) {
             clearInteractionArea();
-            printCentered(stdscr, interactionStartRow, width, "Pasch! Du darfst erneut würfeln.");
+            printCentered(stdscr, interactionStartRow, width * 2 / 3, "Du darfst nochmal würfeln.");
+            zeichneWuerfel();
             refresh();
-            napms(1000);
+            napms(2000);
             // Spieler darf nochmal würfeln
             nochmalWuerfeln = true;
         } else {
@@ -462,15 +502,16 @@ void Spiel::wuerfelnUndZiehen() {
 }
 
 void Spiel::clearInteractionArea() {
-    // Nur die unteren 10 Zeilen löschen
-    for (int i = LINES - 11; i < LINES - 1; ++i) {
-        move(i, 0);
+    // Nur den Inhalt des Interaktionsbereichs löschen, Rahmen behalten
+    int interactionStartRow = LINES - 13;
+    for (int i = interactionStartRow; i < LINES - 1; ++i) {
+        move(i, 1);
         clrtoeol();
     }
 }
 
 void Spiel::animateDice(int startRow, int& w1, int& w2) {
-    int delays[] = {200, 300, 400, 600, 800, 1000};
+    int delays[] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 150, 200, 250, 300};
     int width = COLS;
 
     const char* diceFaces[6][5] = {
@@ -482,23 +523,17 @@ void Spiel::animateDice(int startRow, int& w1, int& w2) {
         {"+-----+", "| O O |", "| O O |", "| O O |", "+-----+"}
     };
 
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < sizeof(delays)/sizeof(int); ++i) {
         w1 = rand() % 6;
         w2 = rand() % 6;
 
-        // Bereich löschen
-        for (int j = 0; j < 5; ++j) {
-            move(startRow + j, 0);
-            clrtoeol();
-        }
-
-        // Würfel anzeigen
-        int dice1_col = (width / 2) - 10;
-        int dice2_col = (width / 2) + 4;
+        // Würfel anzeigen im rechten Drittel
+        int dice1_col = width * 2 / 3 + 5;
+        int dice2_col = width * 2 / 3 + 15;
 
         for (int j = 0; j < 5; ++j) {
-            mvprintw(startRow + j, dice1_col, "%s", diceFaces[w1][j]);
-            mvprintw(startRow + j, dice2_col, "%s", diceFaces[w2][j]);
+            mvprintw(startRow + j + 2, dice1_col, "%s", diceFaces[w1][j]);
+            mvprintw(startRow + j + 2, dice2_col, "%s", diceFaces[w2][j]);
         }
 
         refresh();
@@ -513,25 +548,56 @@ void Spiel::animateDice(int startRow, int& w1, int& w2) {
 void Spiel::animateMovement(Spieler& sp, int schritte) {
     for (int i = 0; i < schritte; ++i) {
         sp.position = (sp.position + 1) % 40;
-        // Zeichne das Spielfeld neu, um die neue Position anzuzeigen
+        // Spielfeld neu zeichnen
         zeichneSpielfeld();
         // Kurze Pause für die Animation
         napms(250);
     }
 }
 
+void Spiel::zeichneWuerfel() {
+    int startRow = LINES-14;
+    int width = COLS;
+    int dice1_col = width * 2 / 3 + 5;
+    int dice2_col = width * 2 / 3 + 15;
+
+    const char* diceFaces[6][5] = {
+        {"+-----+", "|     |", "|  O  |", "|     |", "+-----+"},
+        {"+-----+", "| O   |", "|     |", "|   O |", "+-----+"},
+        {"+-----+", "| O   |", "|  O  |", "|   O |", "+-----+"},
+        {"+-----+", "| O O |", "|     |", "| O O |", "+-----+"},
+        {"+-----+", "| O O |", "|  O  |", "| O O |", "+-----+"},
+        {"+-----+", "| O O |", "| O O |", "| O O |", "+-----+"}
+    };
+
+    int w1 = lastWuerfel1 - 1;
+    int w2 = lastWuerfel2 - 1;
+
+    if (w1 < 0 || w1 >= 6) w1 = 0;
+    if (w2 < 0 || w2 >= 6) w2 = 0;
+
+    for (int j = 0; j < 5; ++j) {
+        mvprintw(startRow + j + 2, dice1_col, "%s", diceFaces[w1][j]);
+        mvprintw(startRow + j + 2, dice2_col, "%s", diceFaces[w2][j]);
+    }
+    refresh();
+}
 
 void Spiel::feldAktion(Spieler& sp) {
     Spielfeld& feld = spielfelder[sp.position];
-    int interactionRow = LINES - 10;
+    int interactionStartRow = LINES - 12;
     int width = COLS;
 
     clearInteractionArea();
 
     if (feld.eigentuemer.empty()) {
-        // Feld ist frei, Kaufoption anbieten
-        std::string frage = sp.name + ", möchtest du \"" + feld.name + "\" um " + std::to_string(feld.preis) + " EUR kaufen? (J/N)";
-        printCentered(stdscr, interactionRow, width, frage.c_str());
+        // Kaufoption anbieten
+        std::string frage = sp.name + ", willst du \"" + feld.name + "\" für " + std::to_string(feld.preis) + " EUR kaufen?";
+        printCentered(stdscr, interactionStartRow, width * 2 / 3, frage.c_str());
+        // Eingabehinweis aktualisieren
+        eingabeHinweis = " [J/N] ";
+
+        zeichneWuerfel();
         refresh();
 
         int ch;
@@ -544,16 +610,19 @@ void Spiel::feldAktion(Spieler& sp) {
                 sp.geld -= feld.preis;
                 feld.eigentuemer = sp.name;
                 clearInteractionArea();
-                std::string msg = "Du hast \"" + feld.name + "\" gekauft.";
-                printCentered(stdscr, interactionRow, width, msg.c_str());
+                std::string msg = "Gekauft: " + feld.name;
+                printCentered(stdscr, interactionStartRow, width * 2 / 3, msg.c_str());
+                zeichneSpielfeld();
+                zeichneWuerfel();
                 refresh();
-                napms(1000);
+                napms(2000);
             } else {
                 clearInteractionArea();
-                std::string msg = "Nicht genug Geld, um dieses Feld zu kaufen.";
-                printCentered(stdscr, interactionRow, width, msg.c_str());
+                std::string msg = "Nicht genug Geld.";
+                printCentered(stdscr, interactionStartRow, width * 2 / 3, msg.c_str());
+                zeichneWuerfel();
                 refresh();
-                napms(1000);
+                napms(2000);
             }
         } else {
             // Spieler lehnt ab
@@ -571,13 +640,12 @@ void Spiel::feldAktion(Spieler& sp) {
             }
         }
 
-        clearInteractionArea();
-        std::string msg = "Du zahlst " + std::to_string(miete) + " EUR Miete an " + feld.eigentuemer + ".";
-        printCentered(stdscr, interactionRow, width, msg.c_str());
+//        clearInteractionArea();
+        std::string msg = "Du zahlst " + std::to_string(miete) + " EUR Miete an " + feld.eigentuemer;
+        printCentered(stdscr, interactionStartRow, width * 2 / 3, msg.c_str());
+        zeichneWuerfel();
         refresh();
-        napms(1000);
+        napms(2000);
     }
     // Andernfalls passiert nichts
 }
-
-

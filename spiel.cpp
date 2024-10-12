@@ -4,6 +4,8 @@
 #include <algorithm> // Für std::remove
 #include <cstdlib>   // Für rand()
 #include <ctime>     // Für time()
+#include <iomanip> // Für std::setw und std::left
+#include <sstream> // Für std::stringstream
 
 // Hilfsfunktion, um Text zentriert auszugeben
 void printCentered(WINDOW* win, int starty, int width, const char* text) {
@@ -35,11 +37,13 @@ Spiel::Spiel() : aktuellerSpieler(0), lastWuerfel1(1), lastWuerfel2(1), eingabeH
     spielfelder.push_back(Spielfeld(16, "ATOMIC", 240,140, {22,100, 320, 680, 850,1000}));
     spielfelder.push_back(Spielfeld(17, "SAP", 200,110, {20, 80, 230, 550, 710, 900}));
     spielfelder.push_back(Spielfeld(18, "ORF", 160, 0, {40, 80, 160, 0,0,0}));
+    spielfelder[17].medienVerlag = true;
     spielfelder.push_back(Spielfeld(19, "Wienerberger", 380,220, {50,200, 600,1300,1600,1950}));
     spielfelder.push_back(Spielfeld(20, "UTA", 300,200, {30,150, 450, 850,1050,1200}));
     spielfelder.push_back(Spielfeld(21, "SOS Kinderdorf",  0, 0, {0, 0, 0, 0, 0, 0}));
     spielfelder.push_back(Spielfeld(22, "Manner", 220,160, {20,100, 300, 600, 750, 950}));
     spielfelder.push_back(Spielfeld(23, "NEWS", 160, 0, {40, 80, 160, 0,0,0}));
+    spielfelder[22].medienVerlag = true;
     spielfelder.push_back(Spielfeld(24, "Grander", 0, 0, {0, 0, 0, 0, 0, 0}));
     spielfelder.push_back(Spielfeld(25, "VTG", 140, 80, {12, 50, 150, 450, 600, 730}));
     spielfelder.push_back(Spielfeld(26, "LOOS", 160, 90, {16, 80, 200, 500, 700, 800}));
@@ -48,15 +52,17 @@ Spiel::Spiel() : aktuellerSpieler(0), lastWuerfel1(1), lastWuerfel2(1), eingabeH
     spielfelder.push_back(Spielfeld(29, "VOLVO", 260,160, {26,120, 350, 800,1100,1250}));
     spielfelder.push_back(Spielfeld(30, "TetraPak", 160, 90, {16, 80, 200, 500, 700, 800}));
     spielfelder.push_back(Spielfeld(31, "CATRO Schulung", 0, 0, {0, 0, 0, 0, 0, 0}));
-    spielfelder.push_back(Spielfeld(32, "JÖBSTL", 160, 90, {16, 80, 200, 500, 700, 800}));
+    spielfelder.push_back(Spielfeld(32, "JOEBSTL", 160, 90, {16, 80, 200, 500, 700, 800}));
     spielfelder.push_back(Spielfeld(33, "Investkredit", 0, 0, {0, 0, 0, 0, 0, 0}));
     spielfelder.push_back(Spielfeld(34, "Die Presse", 160, 0, {40, 80, 160, 0,0,0}));
-    spielfelder.push_back(Spielfeld(35, "RÖFIX", 180, 100,{18, 70,210,500  , 700, 850}));
+    spielfelder[33].medienVerlag = true;
+    spielfelder.push_back(Spielfeld(35, "ROEFIX", 180, 100,{18, 70,210,500  , 700, 850}));
     spielfelder.push_back(Spielfeld(36, "UNIQA", 120, 50, {12, 36, 108, 180, 300, 450}));
     spielfelder.push_back(Spielfeld(37, "T-Systems", 280,180, {28,140, 400, 800,1000,1150}));
     spielfelder.push_back(Spielfeld(38, "Lieferbeton", 220,160, {20, 100,300, 600, 750, 950}));
     spielfelder.push_back(Spielfeld(39, "Mazda", 320,210, {32,160, 480, 900,1100,1300}));
     spielfelder.push_back(Spielfeld(40, "Welser Profile", 280,180, {28,140, 400, 800,1000,1150}));
+
 }
 
 
@@ -92,7 +98,7 @@ void Spiel::willkommenBildschirm() {
         box(stdscr, 0, 0);
 
         // Titel zentriert
-        printCentered(stdscr, 2, width, "Willkommen bei DKT!");
+        printCentered(stdscr, 2, width, "Willkommen bei nc DKT!");
 
         if (!spielerAnzahlEingegeben) {
             printCentered(stdscr, 4, width, "Bitte geben Sie die Anzahl der Spieler ein (2-4): ");
@@ -110,7 +116,7 @@ void Spiel::willkommenBildschirm() {
             } else {
 //                printCentered(stdscr, 8, width, "Ungueltige Anzahl. Bitte erneut eingeben.");
 //                refresh();
-//                napms(1500); // Kurze Pause, um die Nachricht anzuzeigen
+//                warte(1500); // Kurze Pause, um die Nachricht anzuzeigen
             }
         } else {
             for (int i = 0; i < anzahlSpieler; i++) {
@@ -139,7 +145,7 @@ void Spiel::willkommenBildschirm() {
                     if (strlen(name) == 0) {
 //                        printCentered(stdscr, 9, width, "Der Name darf nicht leer sein. Bitte erneut eingeben.");
 //                        refresh();
-//                        napms(1500); // Kurze Pause, um die Nachricht anzuzeigen
+//                        warte(1500); // Kurze Pause, um die Nachricht anzuzeigen
                           continue; // Zurück zum Anfang der Schleife
                     }
 
@@ -283,7 +289,15 @@ void Spiel::spielLoop() {
         wuerfelnUndZiehen();
 
         // Nächster Spieler
-        aktuellerSpieler = (aktuellerSpieler + 1) % spieler.size();
+        bool aufSchulung;
+        do{
+            aufSchulung = false;
+            aktuellerSpieler = (aktuellerSpieler + 1) % spieler.size();
+            if(spieler[aktuellerSpieler].rundenInSchulung > 0){
+                spieler[aktuellerSpieler].rundenInSchulung--;
+                aufSchulung = true;
+            }
+        }while(aufSchulung);
     }
 
     endwin();
@@ -324,7 +338,7 @@ void Spiel::zeichneSpielfeld() {
 
     // Titel zentriert anzeigen
     int width = COLS;
-    printCentered(stdscr, 0, width, "DKT");
+    printCentered(stdscr, 0, width, " === DKT === ");
 
     // Leerzeile statt Tabellenkopf
     mvprintw(1, 1, " ");
@@ -372,19 +386,19 @@ void Spiel::zeichneSpielfeld() {
             std::string entwicklungsStufe;
             switch (feld.haeuser) {
                 case 0:
-                    entwicklungsStufe = "GmbH";
+                    entwicklungsStufe = "GmbH      ";
                     break;
                 case 1:
-                    entwicklungsStufe = "GmbH *";
+                    entwicklungsStufe = "GmbH *    ";
                     break;
                 case 2:
-                    entwicklungsStufe = "GmbH **";
+                    entwicklungsStufe = "GmbH **   ";
                     break;
                 case 3:
-                    entwicklungsStufe = "GmbH ***";
+                    entwicklungsStufe = "GmbH ***  ";
                     break;
                 case 4:
-                    entwicklungsStufe = "GmbH ****";
+                    entwicklungsStufe = "GmbH **** ";
                     break;
                 case 5:
                     entwicklungsStufe = "### AG ###";
@@ -397,7 +411,15 @@ void Spiel::zeichneSpielfeld() {
             // Aktuelle Miete basierend auf Entwicklungsstufe
             int aktuelleMiete = feld.miete[feld.haeuser];
 
-            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | " + entwicklungsStufe + " | Miete: " + std::to_string(aktuelleMiete) + " EUR";
+            std::stringstream ss;
+            ss << "| "
+               << std::setw(2) << std::right << feld.nummer << ". | "  // Rechtsbündig mit 2 Zeichen
+               << std::left << std::setw(20) << feld.name              // Linksbündig mit 20 Zeichen
+               << " | " << entwicklungsStufe
+               << " | Miete: "
+               << std::setw(4) << std::right << std::to_string(aktuelleMiete) << " EUR";
+            fieldInfo = ss.str();
+
             // Hintergrundfarbe des Eigentümers setzen
             int farbe = 0;
             for (const auto& sp : spieler) {
@@ -416,7 +438,14 @@ void Spiel::zeichneSpielfeld() {
             }
         } else {
             // Feld ist frei, Kaufpreis anzeigen
-            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | Kauf: " + std::to_string(feld.preis) + " EUR";
+            std::stringstream ss;
+            ss << "| "
+               << std::setw(2) << std::right << feld.nummer << ". | "  // Rechtsbündig mit 2 Zeichen
+               << std::left << std::setw(20) << feld.name              // Linksbündig mit 20 Zeichen
+               << " |            | Kauf:  "
+               << std::setw(4) << std::right << std::to_string(feld.preis) << " EUR";
+            fieldInfo = ss.str();
+
             mvprintw(row, 14, "%s", fieldInfo.c_str());
         }
     }
@@ -463,19 +492,19 @@ void Spiel::zeichneSpielfeld() {
             std::string entwicklungsStufe;
             switch (feld.haeuser) {
                 case 0:
-                    entwicklungsStufe = "GmbH";
+                    entwicklungsStufe = "GmbH      ";
                     break;
                 case 1:
-                    entwicklungsStufe = "GmbH *";
+                    entwicklungsStufe = "GmbH *    ";
                     break;
                 case 2:
-                    entwicklungsStufe = "GmbH **";
+                    entwicklungsStufe = "GmbH **   ";
                     break;
                 case 3:
-                    entwicklungsStufe = "GmbH ***";
+                    entwicklungsStufe = "GmbH ***  ";
                     break;
                 case 4:
-                    entwicklungsStufe = "GmbH ****";
+                    entwicklungsStufe = "GmbH **** ";
                     break;
                 case 5:
                     entwicklungsStufe = "### AG ###";
@@ -488,7 +517,15 @@ void Spiel::zeichneSpielfeld() {
             // Aktuelle Miete basierend auf Entwicklungsstufe
             int aktuelleMiete = feld.miete[feld.haeuser];
 
-            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | " + entwicklungsStufe + " | Miete: " + std::to_string(aktuelleMiete) + " EUR";
+            std::stringstream ss;
+            ss << "| "
+               << std::setw(2) << std::right << feld.nummer << ". | "  // Rechtsbündig mit 2 Zeichen
+               << std::left << std::setw(20) << feld.name              // Linksbündig mit 20 Zeichen
+               << " | " << entwicklungsStufe
+               << " | Miete: "
+               << std::setw(4) << std::right << std::to_string(aktuelleMiete) << " EUR";
+            fieldInfo = ss.str();
+
             // Hintergrundfarbe des Eigentümers setzen
             int farbe = 0;
             for (const auto& sp : spieler) {
@@ -507,7 +544,13 @@ void Spiel::zeichneSpielfeld() {
             }
         } else {
             // Feld ist frei, Kaufpreis anzeigen
-            fieldInfo = "| " + std::to_string(feld.nummer) + ". | " + feld.name + " | Kauf: " + std::to_string(feld.preis) + " EUR";
+            std::stringstream ss;
+            ss << "| "
+               << std::setw(2) << std::right << feld.nummer << ". | "  // Rechtsbündig mit 2 Zeichen
+               << std::left << std::setw(20) << feld.name              // Linksbündig mit 20 Zeichen
+               << " |            | Kauf:  "
+               << std::setw(4) << std::right << std::to_string(feld.preis) << " EUR";
+            fieldInfo = ss.str();
             mvprintw(row, width / 2 + 14, "%s", fieldInfo.c_str());
         }
     }
@@ -562,6 +605,11 @@ void Spiel::zeichneAnweisungsbereich() {
     printCentered(stdscr, interactionStartRow, instructionAreaWidth, anweisungsText.c_str());
 }
 
+void Spiel::warte(int ms)
+{
+    napms(ms);
+}
+
 void Spiel::zeichneWuerfel() {
     int startRow = LINES - 14;
     int width = COLS;
@@ -577,13 +625,23 @@ void Spiel::zeichneWuerfel() {
     int dice2_col = diceAreaStartCol + 15;
 
     const char* diceFaces[6][5] = {
-        {"+-----+", "|     |", "|  O  |", "|     |", "+-----+"},
-        {"+-----+", "| O   |", "|     |", "|   O |", "+-----+"},
-        {"+-----+", "| O   |", "|  O  |", "|   O |", "+-----+"},
-        {"+-----+", "| O O |", "|     |", "| O O |", "+-----+"},
-        {"+-----+", "| O O |", "|  O  |", "| O O |", "+-----+"},
-        {"+-----+", "| O O |", "| O O |", "| O O |", "+-----+"}
+        {"+-------+", "|       |", "|   O   |", "|       |", "+-------+"},
+        {"+-------+", "| O     |", "|       |", "|     O |", "+-------+"},
+        {"+-------+", "| O     |", "|   O   |", "|     O |", "+-------+"},
+        {"+-------+", "| O   O |", "|       |", "| O   O |", "+-------+"},
+        {"+-------+", "| O   O |", "|   O   |", "| O   O |", "+-------+"},
+        {"+-------+", "| O   O |", "| O   O |", "| O   O |", "+-------+"}
     };
+
+// UTF-8 needed
+//    const char* diceFaces[6][5] = {
+//        {"┌───────┐", "│       │", "│   O   │", "│       │", "└───────┘"},
+//        {"┌───────┐", "│ O     │", "│       │", "│     O │", "└───────┘"},
+//        {"┌───────┐", "│ O     │", "│   O   │", "│     O │", "└───────┘"},
+//        {"┌───────┐", "│ O   O │", "│       │", "│ O   O │", "└───────┘"},
+//        {"┌───────┐", "│ O   O │", "│   O   │", "│ O   O │", "└───────┘"},
+//        {"┌───────┐", "│ O   O │", "│ O   O │", "│ O   O │", "└───────┘"}
+//    };
 
     int w1 = lastWuerfel1 - 1;
     int w2 = lastWuerfel2 - 1;
@@ -652,6 +710,22 @@ void Spiel::wuerfelnUndZiehen() {
 
         // Bewegung der Spielfigur mit Animation
         animateMovement(aktSpieler, schritte);
+        if(aktSpieler.position == 0){
+            aktSpieler.geld += 200; // AWS Extra-Startgeld
+        }
+
+        if(aktSpieler.position == 10){ // CATRO Schulung
+            aktSpieler.position = 30;
+            aktSpieler.rundenInSchulung = 2; // TODO: 50€ zahlen für 1-Tages-Schulung
+            // TODO: Meldung "xxx geht auf Schulung."
+            nochmalWuerfeln = false;
+        }
+
+        if(aktSpieler.position == 20){ // SOS-Kinderdorf
+            aktSpieler.position = 0;
+            aktSpieler.geld += 400; // AWS Extra-Startgeld
+        }
+
 
         // Gesamtes Bild aktualisieren
         aktualisiereBild();
@@ -663,11 +737,11 @@ void Spiel::wuerfelnUndZiehen() {
         aktualisiereBild();
 
         // Prüfen auf Pasch
-        if (wuerfel1 == wuerfel2) {
+        if (wuerfel1 == wuerfel2 && aktSpieler.position != 30) { // wenn auf Schulung, verfällt das nochmalige Würfeln.
             anweisungsText = "Du darfst nochmal würfeln.";
             eingabeHinweis = "";
             aktualisiereBild();
-            napms(2000);
+            warte(2000);
             nochmalWuerfeln = true;
         } else {
             nochmalWuerfeln = false;
@@ -689,7 +763,7 @@ void Spiel::animateDice(int& w1, int& w2) {
         // Bild aktualisieren, um die Würfel anzuzeigen
         aktualisiereBild();
 
-        napms(delays[i]);
+        warte(delays[i]);
     }
 
     // Endgültige Würfelwerte
@@ -700,73 +774,23 @@ void Spiel::animateDice(int& w1, int& w2) {
 void Spiel::animateMovement(Spieler& sp, int schritte) {
     for (int i = 0; i < schritte; ++i) {
         sp.position = (sp.position + 1) % 40;
+        if(sp.position == 0){
+            sp.geld += 200;
+        }
         // Gesamtes Bild aktualisieren
         aktualisiereBild();
         // Kurze Pause für die Animation
-        napms(250);
+        warte(250);
     }
 }
 
 void Spiel::feldAktion(Spieler& sp) {
     Spielfeld& feld = spielfelder[sp.position];
 
-    if (feld.eigentuemer.empty()) {
-        // Kaufoption anbieten
-        anweisungsText = sp.name + ", willst du \"" + feld.name + "\" für " + std::to_string(feld.preis) + " EUR kaufen?";
-        eingabeHinweis = " [J/N] ";
-
-        // Gesamtes Bild aktualisieren
-        aktualisiereBild();
-
-        int ch;
-        do {
-            ch = toupper(getch());
-        } while (ch != 'J' && ch != 'N');
-
-        if (ch == 'J') {
-            if (sp.geld >= feld.preis) {
-                sp.geld -= feld.preis;
-                feld.eigentuemer = sp.name;
-                feld.haeuser = 0; // Start mit GmbH
-                anweisungsText = "Gekauft: " + feld.name;
-                eingabeHinweis = "";
-                aktualisiereBild();
-                napms(2000);
-            } else {
-                anweisungsText = "Nicht genug Geld.";
-                eingabeHinweis = "";
-                aktualisiereBild();
-                napms(2000);
-            }
-        } else {
-            // Spieler lehnt ab
-            anweisungsText = "";
-            eingabeHinweis = "";
-        }
-    } else if (feld.eigentuemer != sp.name) {
-        // Miete zahlen
-        int miete = feld.miete[feld.haeuser]; // Miete basierend auf Entwicklungsstufe
-        sp.geld -= miete;
-
-        // Eigentümer finden und Miete gutschreiben
-        for (auto& eigSp : spieler) {
-            if (eigSp.name == feld.eigentuemer) {
-                eigSp.geld += miete;
-                break;
-            }
-        }
-
-        anweisungsText = "Du zahlst " + std::to_string(miete) + " EUR Miete an " + feld.eigentuemer;
-        eingabeHinweis = "";
-        aktualisiereBild();
-        napms(2000);
-    } else {
-        // Option zum Investieren anbieten
-        if (feld.haeuser < 5 && feld.investitionsKosten > 0) { // Maximale Entwicklungsstufe ist 5
-            std::string bauArt = (feld.haeuser < 4) ? "eine Investition tätigen" : "in eine AG umwandeln";
-            int kosten = feld.investitionsKosten;
-
-            anweisungsText = sp.name + ", willst du " + bauArt + " auf \"" + feld.name + "\" für " + std::to_string(kosten) + " EUR?";
+    if(feld.erwerblich){
+        if (feld.eigentuemer.empty()) {
+            // Kaufoption anbieten
+            anweisungsText = sp.name + ", willst du \"" + feld.name + "\" für " + std::to_string(feld.preis) + " EUR kaufen?";
             eingabeHinweis = " [J/N] ";
 
             // Gesamtes Bild aktualisieren
@@ -778,31 +802,114 @@ void Spiel::feldAktion(Spieler& sp) {
             } while (ch != 'J' && ch != 'N');
 
             if (ch == 'J') {
-                if (sp.geld >= kosten) {
-                    sp.geld -= kosten;
-                    feld.haeuser += 1; // Entwicklungsstufe erhöhen
-                    std::string stufe = (feld.haeuser == 5) ? "AG" : "GmbH";
-                    anweisungsText = "Du hast \"" + feld.name + "\" zu einer " + stufe + " ausgebaut.";
+                if (sp.geld >= feld.preis) {
+                    sp.geld -= feld.preis;
+                    feld.eigentuemer = sp.name;
+                    feld.haeuser = 0; // Start mit GmbH
+                    if(feld.medienVerlag){
+                        sp.medienVerlage++;
+                        feld.haeuser = sp.medienVerlage-1;
+
+                        // Suche andere Felder vom gleichen Spieler, die auch ein MedienVerlag sind, und aktualisiere deren haeuser
+                        for (auto& f : spielfelder) {
+                            if (f.eigentuemer == sp.name && f.medienVerlag && &f != &feld) {
+                                f.haeuser = sp.medienVerlage - 1;
+                            }
+                        }
+                    }
+
+                    anweisungsText = "Gekauft: " + feld.name;
                     eingabeHinweis = "";
                     aktualisiereBild();
-                    napms(2000);
+                    warte(2000);
                 } else {
-                    anweisungsText = "Nicht genug Geld für die Investition.";
+                    anweisungsText = "Nicht genug Geld.";
                     eingabeHinweis = "";
                     aktualisiereBild();
-                    napms(2000);
+                    warte(2000);
                 }
             } else {
                 // Spieler lehnt ab
                 anweisungsText = "";
                 eingabeHinweis = "";
             }
-        } else {
-            // Maximale Entwicklungsstufe erreicht oder keine Investition möglich
-            anweisungsText = "\"" + feld.name + "\" kann nicht weiter ausgebaut werden.";
+        } else if (feld.eigentuemer != sp.name) {
+
+            // Eigentümer finden
+            for (auto& eigentuemer : spieler) {
+                if (eigentuemer.name == feld.eigentuemer) {
+                    if(eigentuemer.rundenInSchulung == 0){
+                        // Miete zahlen
+                        int miete = feld.miete[feld.haeuser]; // Miete basierend auf Entwicklungsstufe
+                        sp.geld -= miete;
+                        eigentuemer.geld += miete;
+
+
+                        anweisungsText = "Du zahlst " + std::to_string(miete) + " EUR Miete an " + feld.eigentuemer;
+                    }else{
+                        anweisungsText = eigentuemer.name + " ist momentan auf Schulung. Glück gehabt!";
+                    }
+
+                    break;
+                }
+            }
+
+
+
+
             eingabeHinweis = "";
             aktualisiereBild();
-            napms(2000);
+            warte(2000);
+        } else {
+            // Option zum Investieren anbieten
+            if (feld.haeuser < 5 && feld.investitionsKosten > 0) { // Maximale Entwicklungsstufe ist 5
+                std::string bauArt = (feld.haeuser < 4) ? "eine Investition tätigen" : "in eine AG umwandeln";
+                int kosten = feld.investitionsKosten;
+
+                anweisungsText = sp.name + ", willst du " + bauArt + " auf \"" + feld.name + "\" für " + std::to_string(kosten) + " EUR?";
+                eingabeHinweis = " [J/N] ";
+
+                // Gesamtes Bild aktualisieren
+                aktualisiereBild();
+
+                int ch;
+                do {
+                    ch = toupper(getch());
+                } while (ch != 'J' && ch != 'N');
+
+                if (ch == 'J') {
+                    if (sp.geld >= kosten) {
+                        sp.geld -= kosten;
+                        feld.haeuser += 1; // Entwicklungsstufe erhöhen
+                        std::string stufe = (feld.haeuser == 5) ? "AG" : "GmbH";
+                        anweisungsText = "Du hast \"" + feld.name + "\" zu einer " + stufe + " ausgebaut.";
+                        eingabeHinweis = "";
+                        aktualisiereBild();
+                        warte(2000);
+                    } else {
+                        anweisungsText = "Nicht genug Geld für die Investition.";
+                        eingabeHinweis = "";
+                        aktualisiereBild();
+                        warte(2000);
+                    }
+                } else {
+                    // Spieler lehnt ab
+                    anweisungsText = "";
+                    eingabeHinweis = "";
+                }
+            } else {
+                // Maximale Entwicklungsstufe erreicht oder keine Investition möglich
+                anweisungsText = "\"" + feld.name + "\" kann nicht weiter ausgebaut werden.";
+                eingabeHinweis = "";
+                aktualisiereBild();
+                warte(2000);
+            }
         }
+    }else{ // nicht erwerbliches Feld
+        // TODO: sonderbehandlungen
+        anweisungsText = "\"" + feld.name + "\" kann nicht gekauft werden.";
+        eingabeHinweis = "";
+        aktualisiereBild();
+        warte(2000);
     }
 }

@@ -13,6 +13,8 @@ public:
     std::vector<int> miete;    // Mieten für unterschiedliche Entwicklungsstufen
     std::string eigentuemer;
     int haeuser;               // Anzahl der Häuser (0-4), 5 für Hotel
+    bool erwerblich;
+    bool medienVerlag;
 
     Spielfeld(int nr, const std::string& n, int p, int investKosten, const std::vector<int>& m);
 };

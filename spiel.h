@@ -35,6 +35,7 @@ public:
     void zeichneEingabeHinweise();
     void animateDice(int &w1, int &w2);
     void zeichneAnweisungsbereich();
+    void warte(int ms);
 };
 
 #endif // SPIEL_H

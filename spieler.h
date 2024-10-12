@@ -10,6 +10,9 @@ public:
     int position;
     int geld;
 
+    int rundenInSchulung;
+    int medienVerlage;
+
     Spieler(const std::string& name, int farbe, int startPosition, int startGeld);
     void bewegeVorwaerts(int felder);
 };

@@ -22,6 +22,10 @@ public:
     Spiel();
     void willkommenBildschirm();
     void spielLoop();
+    void feldAktion(Spieler &sp);
+    void animateMovement(Spieler &sp, int schritte);
+    void animateDice(int startRow, int &w1, int &w2);
+    void clearInteractionArea();
 };
 
 #endif // SPIEL_H

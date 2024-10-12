@@ -257,7 +257,11 @@ void Spiel::spielLoop() {
 }
 
 void Spiel::zeichneSpielfeld() {
-    clear();
+    // Lösche nur den Bereich des Spielfelds (oberhalb des Interaktionsbereichs)
+    for (int i = 0; i < LINES - 11; ++i) {
+        move(i, 0);
+        clrtoeol();
+    }
 
     // Rahmen zeichnen
     box(stdscr, 0, 0);
@@ -342,37 +346,192 @@ void Spiel::zeichneSpielfeld() {
         mvprintw(row, width / 2 + 14, "| %2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
     }
 
+    // Statuszeile mit Geldständen der Spieler
+    int statusRow = LINES - 11; // Start der Statuszeile
+    mvhline(statusRow - 1, 0, ACS_HLINE, COLS); // Trennlinie
+
+    int xPos = 1;
+    for (const auto& sp : spieler) {
+        std::string info = sp.name + ": " + std::to_string(sp.geld) + " EUR ";
+        attron(COLOR_PAIR(sp.farbe));
+        mvprintw(statusRow - 1, xPos, "%s", info.c_str());
+        attroff(COLOR_PAIR(sp.farbe));
+        xPos += info.length() + 2;
+    }
+
     refresh();
 }
 
 void Spiel::wuerfelnUndZiehen() {
     Spieler& aktSpieler = spieler[aktuellerSpieler];
-
-    mvprintw(LINES - 5, 1, "Spieler %s ist an der Reihe. Druecken Sie eine Taste zum Wuerfeln.", aktSpieler.name.c_str());
-    getch();
+    int interactionStartRow = LINES - 10; // Startzeile für Interaktion
+    int width = COLS;
 
     bool nochmalWuerfeln = true;
 
     while (nochmalWuerfeln) {
-        int wuerfel1 = (rand() % 6) + 1;
-        int wuerfel2 = (rand() % 6) + 1;
+        clearInteractionArea();
+
+        // Anzeige, welcher Spieler an der Reihe ist
+        std::string msg = aktSpieler.name + " ist an der Reihe. Drücke Enter oder Leertaste zum Würfeln.";
+        printCentered(stdscr, interactionStartRow, width, msg.c_str());
+        refresh();
+
+        // Warten auf Eingabe
+        int ch;
+        do {
+            ch = getch();
+        } while (ch != '\n' && ch != ' ');
+
+        // Würfelanimation
+        int wuerfel1, wuerfel2;
+        animateDice(interactionStartRow + 1, wuerfel1, wuerfel2);
+
         int schritte = wuerfel1 + wuerfel2;
 
-        mvprintw(LINES - 4, 1, "Gewuerfelt: %d + %d = %d", wuerfel1, wuerfel2, schritte);
-
-        // Spieler bewegen
-        aktSpieler.bewegeVorwaerts(schritte);
+        // Bewegung der Spielfigur mit Animation
+        animateMovement(aktSpieler, schritte);
 
         // Spielfeld neu zeichnen
         zeichneSpielfeld();
 
+        // Feldaktion durchführen
+        feldAktion(aktSpieler);
+
+        // Spielfeld erneut zeichnen, um Änderungen zu reflektieren
+        zeichneSpielfeld();
+
         // Prüfen auf Pasch
         if (wuerfel1 == wuerfel2) {
-            mvprintw(LINES - 3, 1, "Doppelwurf! Sie duerfen erneut wuerfeln.");
-            getch();
+            clearInteractionArea();
+            printCentered(stdscr, interactionStartRow, width, "Pasch! Du darfst erneut würfeln.");
+            refresh();
+            napms(1000);
+            // Spieler darf nochmal würfeln
             nochmalWuerfeln = true;
         } else {
             nochmalWuerfeln = false;
         }
     }
 }
+
+void Spiel::clearInteractionArea() {
+    // Nur die unteren 10 Zeilen löschen
+    for (int i = LINES - 11; i < LINES - 1; ++i) {
+        move(i, 0);
+        clrtoeol();
+    }
+}
+
+void Spiel::animateDice(int startRow, int& w1, int& w2) {
+    int delays[] = {200, 300, 400, 600, 800, 1000};
+    int width = COLS;
+
+    const char* diceFaces[6][5] = {
+        {"+-----+", "|     |", "|  O  |", "|     |", "+-----+"},
+        {"+-----+", "| O   |", "|     |", "|   O |", "+-----+"},
+        {"+-----+", "| O   |", "|  O  |", "|   O |", "+-----+"},
+        {"+-----+", "| O O |", "|     |", "| O O |", "+-----+"},
+        {"+-----+", "| O O |", "|  O  |", "| O O |", "+-----+"},
+        {"+-----+", "| O O |", "| O O |", "| O O |", "+-----+"}
+    };
+
+    for (int i = 0; i < 6; ++i) {
+        w1 = rand() % 6;
+        w2 = rand() % 6;
+
+        // Bereich löschen
+        for (int j = 0; j < 5; ++j) {
+            move(startRow + j, 0);
+            clrtoeol();
+        }
+
+        // Würfel anzeigen
+        int dice1_col = (width / 2) - 10;
+        int dice2_col = (width / 2) + 4;
+
+        for (int j = 0; j < 5; ++j) {
+            mvprintw(startRow + j, dice1_col, "%s", diceFaces[w1][j]);
+            mvprintw(startRow + j, dice2_col, "%s", diceFaces[w2][j]);
+        }
+
+        refresh();
+        napms(delays[i]);
+    }
+
+    // Endgültige Würfelwerte
+    w1 += 1;
+    w2 += 1;
+}
+
+void Spiel::animateMovement(Spieler& sp, int schritte) {
+    for (int i = 0; i < schritte; ++i) {
+        sp.position = (sp.position + 1) % 40;
+        // Zeichne das Spielfeld neu, um die neue Position anzuzeigen
+        zeichneSpielfeld();
+        // Kurze Pause für die Animation
+        napms(250);
+    }
+}
+
+
+void Spiel::feldAktion(Spieler& sp) {
+    Spielfeld& feld = spielfelder[sp.position];
+    int interactionRow = LINES - 10;
+    int width = COLS;
+
+    clearInteractionArea();
+
+    if (feld.eigentuemer.empty()) {
+        // Feld ist frei, Kaufoption anbieten
+        std::string frage = sp.name + ", möchtest du \"" + feld.name + "\" um " + std::to_string(feld.preis) + " EUR kaufen? (J/N)";
+        printCentered(stdscr, interactionRow, width, frage.c_str());
+        refresh();
+
+        int ch;
+        do {
+            ch = toupper(getch());
+        } while (ch != 'J' && ch != 'N');
+
+        if (ch == 'J') {
+            if (sp.geld >= feld.preis) {
+                sp.geld -= feld.preis;
+                feld.eigentuemer = sp.name;
+                clearInteractionArea();
+                std::string msg = "Du hast \"" + feld.name + "\" gekauft.";
+                printCentered(stdscr, interactionRow, width, msg.c_str());
+                refresh();
+                napms(1000);
+            } else {
+                clearInteractionArea();
+                std::string msg = "Nicht genug Geld, um dieses Feld zu kaufen.";
+                printCentered(stdscr, interactionRow, width, msg.c_str());
+                refresh();
+                napms(1000);
+            }
+        } else {
+            // Spieler lehnt ab
+        }
+    } else if (feld.eigentuemer != sp.name) {
+        // Miete zahlen
+        int miete = feld.preis / 10; // Beispielhafte Miete
+        sp.geld -= miete;
+
+        // Eigentümer finden und Miete gutschreiben
+        for (auto& eigSp : spieler) {
+            if (eigSp.name == feld.eigentuemer) {
+                eigSp.geld += miete;
+                break;
+            }
+        }
+
+        clearInteractionArea();
+        std::string msg = "Du zahlst " + std::to_string(miete) + " EUR Miete an " + feld.eigentuemer + ".";
+        printCentered(stdscr, interactionRow, width, msg.c_str());
+        refresh();
+        napms(1000);
+    }
+    // Andernfalls passiert nichts
+}
+
+

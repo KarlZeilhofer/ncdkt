@@ -40,59 +40,97 @@ void Spiel::willkommenBildschirm() {
     setzeFarben();
     keypad(stdscr, TRUE); // Pfeiltasten aktivieren
 
-    int height, width;
-    getmaxyx(stdscr, height, width);
+    int anzahlSpieler = 0;
+    bool spielerAnzahlEingegeben = false;
+    std::vector<std::string> spielerNamen;
+    std::vector<int> spielerFarben;
 
-    // Neues Fenster erstellen
-    WINDOW* win = newwin(height - 2, width - 2, 1, 1);
-    box(win, 0, 0);
+    while (true) {
+        // Fenstergröße ermitteln
+        int height, width;
+        getmaxyx(stdscr, height, width);
 
-    // Anzahl der Spieler abfragen
-    mvwprintw(win, 2, 2, "Willkommen bei DKT!");
-    mvwprintw(win, 4, 2, "Bitte geben Sie die Anzahl der Spieler ein (2-4): ");
-    wrefresh(win);
+        // Bildschirm löschen und neu zeichnen
+        clear();
+        box(stdscr, 0, 0);
 
-    int anzahlSpieler;
-    echo();
-    mvwscanw(win, 5, 2, "%d", &anzahlSpieler);
-    noecho();
+        // Titel zentriert
+        printCentered(stdscr, 2, width, "Willkommen bei DKT!");
 
-    // Überprüfen der Spieleranzahl
-    while (anzahlSpieler < 2 || anzahlSpieler > 4) {
-        mvwprintw(win, 6, 2, "Ungueltige Anzahl. Bitte waehle zwischen 2 und 4 Spielern.");
-        wrefresh(win);
-        echo();
-        mvwscanw(win, 7, 2, "%d", &anzahlSpieler);
-        noecho();
+        if (!spielerAnzahlEingegeben) {
+            printCentered(stdscr, 4, width, "Bitte geben Sie die Anzahl der Spieler ein (2-4): ");
+            move(6, width / 2 - 2);
+            echo();
+            char input[3];
+            getnstr(input, 2);
+            noecho();
+
+            anzahlSpieler = atoi(input);
+
+            // Überprüfen der Spieleranzahl
+            if (anzahlSpieler >= 2 && anzahlSpieler <= 4) {
+                spielerAnzahlEingegeben = true;
+            } else {
+                printCentered(stdscr, 8, width, "Ungueltige Anzahl. Bitte erneut eingeben.");
+                refresh();
+                napms(1500); // Kurze Pause, um die Nachricht anzuzeigen
+            }
+        } else {
+            for (int i = 0; i < anzahlSpieler; i++) {
+                bool eingabeErfolgreich = false;
+                while (!eingabeErfolgreich) {
+                    // Fenstergröße ermitteln
+                    getmaxyx(stdscr, height, width);
+
+                    // Bildschirm löschen und neu zeichnen
+                    clear();
+                    box(stdscr, 0, 0);
+
+                    // Titel zentriert
+                    printCentered(stdscr, 2, width, "Willkommen bei DKT!");
+                    std::string spielerInfo = "Spieler " + std::to_string(i + 1) + " von " + std::to_string(anzahlSpieler);
+                    printCentered(stdscr, 4, width, spielerInfo.c_str());
+
+                    printCentered(stdscr, 6, width, "Name des Spielers:");
+                    move(7, width / 2 - 10);
+                    echo();
+                    char name[50];
+                    getnstr(name, sizeof(name) - 1);
+                    noecho();
+
+                    // Farbauswahl
+                    int farbe = zeigeFarbauswahl(stdscr, 9);
+
+                    // Spielername und Farbe speichern
+                    spielerNamen.push_back(std::string(name));
+                    spielerFarben.push_back(farbe);
+
+                    // Gewählte Farbe aus verfügbaren Farben entfernen
+                    verfuegbareFarben.erase(std::remove(verfuegbareFarben.begin(), verfuegbareFarben.end(), farbe), verfuegbareFarben.end());
+
+                    eingabeErfolgreich = true;
+                }
+            }
+
+            // Spieler initialisieren
+            for (size_t i = 0; i < spielerNamen.size(); i++) {
+                spieler.push_back(Spieler(spielerNamen[i], spielerFarben[i], 0, 1500));
+            }
+
+            break; // Willkommensbildschirm beenden
+        }
+
+        // Auf Tastendruck prüfen (inklusive KEY_RESIZE)
+        int ch = getch();
+        if (ch == KEY_RESIZE) {
+            // Fenstergröße wurde geändert, Schleife erneut durchlaufen, um Bildschirm neu zu zeichnen
+            continue;
+        }
+
+        refresh();
     }
 
-    // Spielernamen und Farben eingeben
-    for (int i = 0; i < anzahlSpieler; i++) {
-        werase(win);
-        box(win, 0, 0);
-        mvwprintw(win, 2, 2, "Spieler %d von %d", i + 1, anzahlSpieler);
-        mvwprintw(win, 4, 2, "Name des Spielers:");
-        wrefresh(win);
-
-        char name[50];
-        echo(); // Echo aktivieren für Namenseingabe
-        mvwgetnstr(win, 5, 2, name, sizeof(name) - 1); // Spielernamen eingeben
-        noecho(); // Echo wieder deaktivieren
-
-        // Farbauswahl mit Pfeiltasten
-        int farbe = zeigeFarbauswahl(win, 7);
-
-        // Spieler initialisieren
-        spieler.push_back(Spieler(name, farbe, 0, 1500)); // Startposition 0, Startgeld 1500
-
-        // Gewählte Farbe aus verfügbaren Farben entfernen
-        verfuegbareFarben.erase(std::remove(verfuegbareFarben.begin(), verfuegbareFarben.end(), farbe), verfuegbareFarben.end());
-    }
-
-    // Fenster schließen
-    werase(win);
-    wrefresh(win);
-    delwin(win);
+    // End NCurses-Modus
     endwin();
 }
 
@@ -104,37 +142,43 @@ int Spiel::zeigeFarbauswahl(WINDOW* win, int starty) {
     keypad(win, TRUE); // Pfeiltasten im Fenster aktivieren
 
     while (choice == -1) {
+        // Fenstergröße ermitteln
+        int width = getmaxx(win);
+
         werase(win);
         box(win, 0, 0);
-        mvwprintw(win, starty - 2, 2, "Waehle eine Farbe mit den Pfeiltasten und druecke Enter:");
+
+        printCentered(win, starty - 2, width, "Waehle eine Farbe mit den Pfeiltasten und druecke Enter:");
+
         for (size_t i = 0; i < verfuegbareFarben.size(); i++) {
+            int x = width / 2 - 2; // Zentriert anzeigen
             if ((int)i == highlight) {
                 // Markiere die aktuelle Auswahl mit einem Pfeil
-                mvwprintw(win, starty + i, 2, "-->");
+                mvwprintw(win, starty + i, x - 4, "-->");
             } else {
-                mvwprintw(win, starty + i, 2, "   ");
+                mvwprintw(win, starty + i, x - 4, "   ");
             }
 
             // Farben anzeigen
             switch (verfuegbareFarben[i]) {
                 case 1:
                     wattron(win, COLOR_PAIR(1));
-                    mvwprintw(win, starty + i, 6, "Rot");
+                    mvwprintw(win, starty + i, x, "Rot");
                     wattroff(win, COLOR_PAIR(1));
                     break;
                 case 2:
                     wattron(win, COLOR_PAIR(2));
-                    mvwprintw(win, starty + i, 6, "Blau");
+                    mvwprintw(win, starty + i, x, "Blau");
                     wattroff(win, COLOR_PAIR(2));
                     break;
                 case 3:
                     wattron(win, COLOR_PAIR(3));
-                    mvwprintw(win, starty + i, 6, "Gruen");
+                    mvwprintw(win, starty + i, x, "Gruen");
                     wattroff(win, COLOR_PAIR(3));
                     break;
                 case 4:
                     wattron(win, COLOR_PAIR(4));
-                    mvwprintw(win, starty + i, 6, "Gelb");
+                    mvwprintw(win, starty + i, x, "Gelb");
                     wattroff(win, COLOR_PAIR(4));
                     break;
             }
@@ -155,6 +199,9 @@ int Spiel::zeigeFarbauswahl(WINDOW* win, int starty) {
             case 10: // Enter-Taste
                 choice = verfuegbareFarben[highlight];
                 break;
+            case KEY_RESIZE:
+                // Fenstergröße geändert, neu zeichnen
+                continue;
             default:
                 break;
         }

@@ -19,7 +19,7 @@ Spiel::Spiel() : aktuellerSpieler(0) {
     // Spielfelder initialisieren
     for (int i = 0; i < 40; i++) {
         std::string name = "Feld " + std::to_string(i + 1);
-        int preis = ((i + 1) * 10) % 200 + 50; // Beispielpreise zwischen 50€ und 250€
+        int preis = ((i + 1) * 10) % 200 + 50; // Beispielpreise zwischen 50 und 250
         spielfelder.push_back(Spielfeld(i + 1, name, preis));
     }
 }
@@ -83,7 +83,7 @@ void Spiel::willkommenBildschirm() {
         int farbe = zeigeFarbauswahl(win, 7);
 
         // Spieler initialisieren
-        spieler.push_back(Spieler(name, farbe, 0, 1500)); // Startposition 0, Startgeld 1500€
+        spieler.push_back(Spieler(name, farbe, 0, 1500)); // Startposition 0, Startgeld 1500
 
         // Gewählte Farbe aus verfügbaren Farben entfernen
         verfuegbareFarben.erase(std::remove(verfuegbareFarben.begin(), verfuegbareFarben.end(), farbe), verfuegbareFarben.end());
@@ -192,26 +192,32 @@ void Spiel::spielLoop() {
 void Spiel::zeichneSpielfeld() {
     clear();
 
-    mvprintw(0, 0, "Spielfeld:");
-    mvprintw(1, 0, "Nr.  | Name                       | Preis  ");
+    // Rahmen zeichnen
+    box(stdscr, 0, 0);
+
+    // Titel zentriert anzeigen
+    int width = COLS;
+    printCentered(stdscr, 0, width, "DKT");
+
+    mvprintw(1, 1, "Nr.  | Name                       | Preis ");
 
     for (size_t i = 0; i < spielfelder.size(); i++) {
         Spielfeld& feld = spielfelder[i];
         char line[100];
-        snprintf(line, sizeof(line), "%2d. | %-25s | %6d€", feld.nummer, feld.name.c_str(), feld.preis);
+        snprintf(line, sizeof(line), "%2d. | %-25s | %6d EUR", feld.nummer, feld.name.c_str(), feld.preis);
 
         // Wenn das Feld einem Spieler gehört, Hintergrundfarbe setzen
         if (!feld.eigentuemer.empty()) {
             for (const auto& sp : spieler) {
                 if (sp.name == feld.eigentuemer) {
                     attron(COLOR_PAIR(sp.farbe));
-                    mvprintw(2 + i, 0, "%s", line);
+                    mvprintw(2 + i, 1, "%s", line);
                     attroff(COLOR_PAIR(sp.farbe));
                     break;
                 }
             }
         } else {
-            mvprintw(2 + i, 0, "%s", line);
+            mvprintw(2 + i, 1, "%s", line);
         }
 
         // Spieler auf dem Feld anzeigen
@@ -230,7 +236,7 @@ void Spiel::zeichneSpielfeld() {
 void Spiel::wuerfelnUndZiehen() {
     Spieler& aktSpieler = spieler[aktuellerSpieler];
 
-    mvprintw(LINES - 3, 0, "Spieler %s ist an der Reihe. Druecken Sie eine Taste zum Wuerfeln.", aktSpieler.name.c_str());
+    mvprintw(LINES - 5, 1, "Spieler %s ist an der Reihe. Druecken Sie eine Taste zum Wuerfeln.", aktSpieler.name.c_str());
     getch();
 
     bool nochmalWuerfeln = true;
@@ -240,7 +246,7 @@ void Spiel::wuerfelnUndZiehen() {
         int wuerfel2 = (rand() % 6) + 1;
         int schritte = wuerfel1 + wuerfel2;
 
-        mvprintw(LINES - 2, 0, "Gewuerfelt: %d + %d = %d", wuerfel1, wuerfel2, schritte);
+        mvprintw(LINES - 4, 1, "Gewuerfelt: %d + %d = %d", wuerfel1, wuerfel2, schritte);
 
         // Spieler bewegen
         aktSpieler.bewegeVorwaerts(schritte);
@@ -250,7 +256,7 @@ void Spiel::wuerfelnUndZiehen() {
 
         // Prüfen auf Pasch
         if (wuerfel1 == wuerfel2) {
-            mvprintw(LINES - 1, 0, "Doppelwurf! Sie duerfen erneut wuerfeln.");
+            mvprintw(LINES - 3, 1, "Doppelwurf! Sie duerfen erneut wuerfeln.");
             getch();
             nochmalWuerfeln = true;
         } else {

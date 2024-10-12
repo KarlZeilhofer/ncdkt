@@ -5,7 +5,8 @@ project(ncdkt LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# NCurses-Bibliothek finden und einbinden
+# Wide-Character-Version von NCurses verwenden
+set(CURSES_NEED_WIDE TRUE)
 find_package(Curses REQUIRED)
 include_directories(${CURSES_INCLUDE_DIR})
 
@@ -22,5 +23,5 @@ set(SOURCE_FILES
 
 add_executable(ncdkt ${SOURCE_FILES})
 
-# Verlinken der NCurses-Bibliothek
+# Verlinken der Wide-Character-Version von NCurses
 target_link_libraries(ncdkt ${CURSES_LIBRARIES})

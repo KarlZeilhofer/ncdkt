@@ -57,7 +57,7 @@ Spiel::Spiel() : aktuellerSpieler(0), lastWuerfel1(1), lastWuerfel2(1), eingabeH
     spielfelder.push_back(Spielfeld(34, "Die Presse", 160, 0, {40, 80, 160, 0,0,0}));
     spielfelder[33].medienVerlag = true;
     spielfelder.push_back(Spielfeld(35, "ROEFIX", 180, 100,{18, 70,210,500  , 700, 850}));
-    spielfelder.push_back(Spielfeld(36, "UNIQA", 120, 50, {12, 36, 108, 180, 300, 450}));
+    spielfelder.push_back(Spielfeld(36, "UNIQA", 0, 0, {0, 0, 0, 0, 0, 0}));
     spielfelder.push_back(Spielfeld(37, "T-Systems", 280,180, {28,140, 400, 800,1000,1150}));
     spielfelder.push_back(Spielfeld(38, "Lieferbeton", 220,160, {20, 100,300, 600, 750, 950}));
     spielfelder.push_back(Spielfeld(39, "Mazda", 320,210, {32,160, 480, 900,1100,1300}));
@@ -571,22 +571,6 @@ void Spiel::zeichneSpielfeld() {
     mvaddch(LINES - 1, 0, ACS_LLCORNER);
     mvaddch(LINES - 1, COLS - 1, ACS_LRCORNER);
 
-    // Spielerzustände zentriert und farblich hinterlegt anzeigen
-    int statusRow = LINES - 14;
-    mvhline(statusRow, 0, ACS_HLINE, COLS); // Trennlinie
-
-    int xPos = (COLS - (spieler.size() * 20)) / 2; // Berechne Startposition
-    for (const auto& sp : spieler) {
-        std::string info = sp.name + ": " + std::to_string(sp.geld) + " EUR  ";
-        attron(COLOR_PAIR(sp.farbe));
-        mvprintw(statusRow + 1, xPos, "%s", info.c_str());
-        attroff(COLOR_PAIR(sp.farbe));
-        xPos += info.length();
-    }
-
-    // Eingabehinweise zentriert in der untersten Zeile anzeigen
-    printCentered(stdscr, LINES - 1, COLS, eingabeHinweis.c_str());
-
     refresh();
 }
 
@@ -665,9 +649,9 @@ void Spiel::zeichneStatuszeilen() {
     // Spielerzustände anzeigen
     int xPos = (width - (spieler.size() * 20)) / 2; // Startposition berechnen
     for (const auto& sp : spieler) {
-        std::string info = sp.name + ": " + std::to_string(sp.geld) + " EUR  ";
+        std::string info = "|" + sp.name + ": " + std::to_string(sp.geld) + " EUR |";
         attron(COLOR_PAIR(sp.farbe));
-        mvprintw(statusRow + 1, xPos, "%s", info.c_str());
+        mvprintw(statusRow, xPos, "%s", info.c_str());
         attroff(COLOR_PAIR(sp.farbe));
         xPos += info.length();
     }

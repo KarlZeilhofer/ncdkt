@@ -825,6 +825,11 @@ void Spiel::feldAktion(Spieler& sp) {
                     if(eigentuemer.rundenInSchulung == 0){
                         // Miete zahlen
                         int miete = feld.miete[feld.haeuser]; // Miete basierend auf Entwicklungsstufe
+
+                        if(miete > sp.geld){
+                            erzwingeVerkauf(sp, miete - sp.geld);
+                        }
+
                         sp.geld -= miete;
                         eigentuemer.geld += miete;
 
@@ -895,5 +900,114 @@ void Spiel::feldAktion(Spieler& sp) {
         eingabeHinweis = "";
         aktualisiereBild();
         warte(2000);
+    }
+}
+
+void Spiel::erzwingeVerkauf(Spieler& sp, int mindestErloes) {
+    int gesamtErloes = 0;
+
+    while (gesamtErloes < mindestErloes) {
+        anweisungsText = sp.name + ", du musst ein Feld verkaufen, um deine Schulden zu begleichen!";
+        aktualisiereBild();
+        napms(2000);
+
+        // 1. Ask player which field to sell
+        std::string frage = "Welches Feld möchtest du verkaufen?";
+        anweisungsText = frage;
+        aktualisiereBild();
+
+        int feldNummer = -1;
+        bool gueltigeEingabe = false;
+        while (!gueltigeEingabe) {
+            char input[3];
+            getnstr(input, 2);  // Get the field number input
+            feldNummer = atoi(input) - 1; // Subtract 1 to match index
+
+            if (feldNummer >= 0 && feldNummer < spielfelder.size() && spielfelder[feldNummer].eigentuemer == sp.name) {
+                gueltigeEingabe = true;
+            } else {
+                anweisungsText = "Ungültige Eingabe. Bitte wähle ein gültiges Feld.";
+                aktualisiereBild();
+                napms(2000);
+            }
+        }
+
+        // 2. Ask if selling to player or bank
+        anweisungsText = "An [M]itspieler oder an die [B]ank verkaufen?";
+        aktualisiereBild();
+
+        char verkaufsOption;
+        do {
+            verkaufsOption = toupper(getch());
+        } while (verkaufsOption != 'M' && verkaufsOption != 'B');
+
+        if (verkaufsOption == 'M') {
+            // Selling to a player
+            anweisungsText = "Zu welchem Mindestpreis möchtest du anbieten?";
+            aktualisiereBild();
+
+            char input[10];
+            getnstr(input, 9);  // Get the minimum price input
+            int mindestpreis = atoi(input);
+
+            // All other players get to offer a price
+            bool feldVerkauft = false;
+            for (auto& andererSp : spieler) {
+                if (andererSp.name != sp.name) {
+                    std::string angebotFrage = "Um welchen Preis würdest du \"" + spielfelder[feldNummer].name + "\" kaufen, " + andererSp.name + "?";
+                    anweisungsText = angebotFrage;
+                    aktualisiereBild();
+
+                    getnstr(input, 9);
+                    int angebotPreis = atoi(input);
+
+                    if (angebotPreis >= mindestpreis) {
+                        std::string akzeptierenFrage = "Möchtest du \"" + spielfelder[feldNummer].name + "\" an " + andererSp.name + " um " + std::to_string(angebotPreis) + " EUR verkaufen?";
+                        anweisungsText = akzeptierenFrage;
+                        aktualisiereBild();
+
+                        char akzeptieren;
+                        do {
+                            akzeptieren = toupper(getch());
+                        } while (akzeptieren != 'J' && akzeptieren != 'N');
+
+                        if (akzeptieren == 'J') {
+                            sp.geld += angebotPreis;
+                            gesamtErloes += angebotPreis;
+                            andererSp.geld -= angebotPreis;
+                            spielfelder[feldNummer].eigentuemer = andererSp.name;
+                            anweisungsText = "Feld verkauft an " + andererSp.name + "!";
+                            aktualisiereBild();
+                            napms(2000);
+                            feldVerkauft = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!feldVerkauft) {
+                anweisungsText = "Kein Käufer gefunden.";
+                aktualisiereBild();
+                napms(2000);
+            }
+        } else if (verkaufsOption == 'B') {
+            // Selling to the bank
+            int verkaufswert = (spielfelder[feldNummer].preis + spielfelder[feldNummer].haeuser * spielfelder[feldNummer].investitionsKosten) * 0.8;
+            sp.geld += verkaufswert;
+            gesamtErloes += verkaufswert;
+            spielfelder[feldNummer].eigentuemer = ""; // Reset ownership
+            spielfelder[feldNummer].haeuser = 0; // Reset development
+            anweisungsText = "Feld verkauft an die Bank für " + std::to_string(verkaufswert) + " EUR.";
+            aktualisiereBild();
+            napms(2000);
+        }
+
+        // After each sale, check if the minimum proceeds have been reached
+        if (gesamtErloes >= mindestErloes) {
+            anweisungsText = sp.name + " hat genügend verkauft, um die Schulden zu begleichen.";
+            aktualisiereBild();
+            napms(2000);
+            break;  // Exit the loop once enough proceeds are realized
+        }
     }
 }

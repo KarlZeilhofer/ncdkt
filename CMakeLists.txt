@@ -19,7 +19,10 @@ set(SOURCE_FILES
     spieler.cpp
     spielfeld.h
     spielfeld.cpp
+    csr_karte.h
+    csr_karte.cpp
 )
+
 
 add_executable(ncdkt ${SOURCE_FILES})
 
